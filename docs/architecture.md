@@ -2,16 +2,18 @@
 
 [Documentation](README.md) · [Project overview](../README.md)
 
-The CLI and embedded local dashboard use the same configuration, execution,
-measurement, and reporting packages. Remote workers run the same engine against
-a coordinated rate schedule. The demo is a separate local fixture service.
+The CLI and embedded dashboard use the same configuration, execution,
+measurement, and reporting packages. The dashboard listens on loopback by
+default; its optional remote mode is intended for a trusted private ingress.
+Remote workers run the same engine against a coordinated rate schedule. The
+demo is a separate local fixture service.
 
 ## Execution flow
 
 ```mermaid
 flowchart LR
   CLI[CLI] --> Config[Strict configuration and validation]
-  UI[Local browser] --> Dashboard[Dashboard API and workspace]
+  UI[Browser] --> Dashboard[Dashboard API and workspace]
   Dashboard --> Config
   Config --> Engine[Local execution engine]
   Config --> Coordinator[Rate-mode coordinator]

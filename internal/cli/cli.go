@@ -29,6 +29,7 @@ Usage:
   gmeter run -config examples/journey.json
   gmeter validate -config examples/stress.json
   gmeter ui -listen 127.0.0.1:8790
+  gmeter ui -listen 0.0.0.0:8790 -public-origin https://gmeter.example.com
   gmeter worker -listen 127.0.0.1:8801 -name worker-1
   gmeter run -config examples/smoke.json -workers http://127.0.0.1:8801,http://127.0.0.1:8802
   gmeter version
@@ -95,7 +96,8 @@ func worker(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 func ui(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("ui", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	listen := fs.String("listen", "127.0.0.1:8790", "loopback IP and port for the dashboard")
+	listen := fs.String("listen", "127.0.0.1:8790", "dashboard listen IP and port; non-loopback requires -public-origin")
+	publicOrigin := fs.String("public-origin", "", "exact HTTPS origin used by a trusted private ingress")
 	data := fs.String("data", ".gmeter", "directory for saved scenarios and runs")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
@@ -104,7 +106,7 @@ func ui(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 	if fs.NArg() != 0 || *data == "" {
-		fmt.Fprintln(stderr, "usage: gmeter ui [-listen 127.0.0.1:8790] [-data .gmeter]")
+		fmt.Fprintln(stderr, "usage: gmeter ui [-listen 127.0.0.1:8790] [-public-origin https://host] [-data .gmeter]")
 		return 2
 	}
 	path, err := filepath.Abs(*data)
@@ -112,7 +114,7 @@ func ui(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
-	if err := dashboard.Serve(ctx, *listen, path, stdout); err != nil {
+	if err := dashboard.Serve(ctx, *listen, path, *publicOrigin, stdout); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}

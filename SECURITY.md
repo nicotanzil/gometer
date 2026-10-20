@@ -11,7 +11,7 @@ service security model or a security certification.
 
 | Connection or storage | Current protection | Operator responsibility |
 | --- | --- | --- |
-| Local dashboard | Explicit loopback listener, exact Host/Origin checks, startup API token, restrictive content security policy | Run on a trusted user account; keep its data directory private |
+| Dashboard | Loopback by default; optional remote listener requires an exact HTTPS public origin, Host/Origin checks, startup API token, and restrictive content security policy | Keep loopback for local use. For remote access, require a VPN or authenticated, allowlisted private ingress and keep the data directory private |
 | Workload HTTPS | System certificate roots and hostname verification by default | Choose trusted targets and protect supplied workload credentials |
 | Insecure workload HTTPS | Explicit opt-in, saved and labeled in results | Use only where skipping target identity checks is appropriate; it applies to all workload requests in that run |
 | Worker control | Shared token; remote workers require verified HTTPS; control redirects rejected | Restrict worker network access, distribute credentials securely, and operate only trusted workers |
@@ -20,9 +20,12 @@ service security model or a security certification.
 
 Local API tokens prevent cross-site request use; they do not isolate the dashboard
 from processes running under the same local account. The app has no login,
-RBAC, SSO, tenant isolation, audit log, or encryption at rest. Exposing it through
-a reverse proxy does not add these application controls. Keep the dashboard on
-loopback. Use the separately secured worker interface for remote load generation.
+RBAC, SSO, tenant isolation, audit log, or encryption at rest. The optional
+`-public-origin` setting preserves exact Host/Origin checks behind a TLS-terminating
+ingress; it does not authenticate users. Remote access must be restricted by a VPN
+or an ingress that enforces authentication and an allowlist. Do not expose the
+dashboard directly to the public internet. Use the separately secured worker
+interface for remote load generation.
 
 The worker token authorizes reserving, starting, stopping, and reading jobs.
 A worker receives workload configuration, including headers, bodies, and data.

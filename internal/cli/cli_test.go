@@ -32,6 +32,19 @@ func TestCLIProducesReportsAndUsesFailureExitCode(t *testing.T) {
 	}
 }
 
+func TestUIRequiresHTTPSOriginForRemoteListener(t *testing.T) {
+	for _, origin := range []string{"", "http://gmeter.example.test"} {
+		args := []string{"ui", "-listen", "0.0.0.0:8790"}
+		if origin != "" {
+			args = append(args, "-public-origin", origin)
+		}
+		var output bytes.Buffer
+		if code := Run(context.Background(), args, &output, &output); code != 2 || !strings.Contains(output.String(), "-public-origin") {
+			t.Fatalf("remote dashboard configuration accepted origin %q: code=%d output=%s", origin, code, output.String())
+		}
+	}
+}
+
 func TestCLIFiniteIterations(t *testing.T) {
 	var attempts atomic.Int64
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { attempts.Add(1) }))

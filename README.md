@@ -179,14 +179,16 @@ for preserving the exit code and artifacts.
 | Build authenticated multi-step workflows | [Application journeys](docs/scenarios.md) |
 | Interpret latency, demand, and verdicts | [Measurements](docs/measurements.md) and [diagnostics](docs/diagnostics.md) |
 | Run worker fleets and collect server metrics | [Workers](docs/workers.md) and [telemetry](docs/telemetry.md) |
+| Deploy a private dashboard and worker pods | [Kubernetes](docs/kubernetes.md) |
 | Operate, back up, and troubleshoot | [Operations](docs/operations.md) |
 | Review security and adoption requirements | [Security](SECURITY.md), [HTTPS](docs/https.md), and [enterprise readiness](docs/readiness.md) |
 | Contribute or understand the code | [Contributing](CONTRIBUTING.md) and [architecture](docs/architecture.md) |
 
 ## Project status
 
-Active development. The dashboard is a local, single-user application; remote
-workers use a separate authenticated control plane. Enterprise adoption should
+Active development. The dashboard is a single-user application that listens on
+loopback by default; optional remote access requires a private authenticated
+ingress. Remote workers use a separate authenticated control plane. Enterprise adoption should
 follow the documented [readiness gates](docs/readiness.md), including release,
 security, operational, and independent measurement validation.
 

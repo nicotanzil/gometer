@@ -1,4 +1,4 @@
-# Local browser dashboard
+# Browser dashboard
 
 [Documentation](README.md) · [Project overview](../README.md)
 
@@ -16,8 +16,11 @@ Start `./bin/gmeter-demo` separately to use examples on port 8787.
 ./bin/gmeter ui -listen '[::1]:8790'
 ```
 
-The listen address must be an explicit loopback IP and port. Port `0` selects an
-available port. The default data directory is `.gmeter/` in the current directory.
+The listen address must be an explicit IP and port. Loopback is the default;
+port `0` selects an available port. A non-loopback listener requires
+`-public-origin https://host` and must sit behind a private TLS ingress that
+enforces VPN access or authentication and an allowlist. The default data
+directory is `.gmeter/` in the current directory. See [private ingress access](operations.md#private-ingress-access).
 
 ## App overview
 
@@ -281,9 +284,10 @@ Saved files are atomic and owner-readable (0600); new workspace directories use
 run bundles include supplied headers, bodies, and data rows, which can contain
 credentials. Result JSON and HTML omit headers and bodies but include target URLs.
 
-This is a local single-user app without accounts, encryption at rest, remote
-access, or multi-user controls. Traffic is sent only after explicitly starting a
-run. A fair comparison against JMeter remains a later milestone.
+This is a single-user app without accounts, RBAC, tenant isolation, audit log, or
+encryption at rest. Private ingress access does not add those controls. Traffic
+is sent only after explicitly starting a run. A fair comparison against JMeter
+remains a later milestone.
 
 ## Guided builder and coverage audit
 

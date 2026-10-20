@@ -13,7 +13,7 @@ It is not a certification or a claim that every enterprise requirement is met.
 | --- | --- | --- |
 | Measurement correctness | Explicit demand accounting, bounded histograms, request/journey separation, worker-state validation | Independent repeatability, accuracy, instrumentation-overhead, and comparative benchmarks for supported workloads |
 | Verification | Vet, race-enabled regression fixtures, example validation, executable builds | Required CI/branch checks, a documented supported-platform matrix, and evidence tied to the exact release revision |
-| Security boundaries | Local-only dashboard, strict parsing, default TLS verification, authenticated remote workers, separate exporter credentials | Threat-model/security review, a working private reporting channel, supported-version policy, and remediation ownership |
+| Security boundaries | Loopback dashboard by default; optional private-ingress origin checks, strict parsing, default TLS verification, authenticated remote workers, separate exporter credentials | Threat-model/security review, a working private reporting channel, supported-version policy, and remediation ownership |
 | Team access | Local single-user account boundary | An authenticated team service would need a separately designed login/SSO, RBAC, audit, and isolation model |
 | Recovery | Atomic workspace/report writes, graceful cancellation, worker leases, explicit abandoned/incomplete results | Practiced backup/restore, retention ownership, durable worker recovery requirements, and failure drills |
 | Release integrity | Version can be injected at build time; native builds | Release from a verified source snapshot; documented artifact checksums/provenance, signing policy, and release ownership |

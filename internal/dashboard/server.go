@@ -13,7 +13,9 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -42,6 +44,8 @@ type Server struct {
 	closing        bool
 	token          string
 	host           string
+	origin         string
+	secureCookie   bool
 	exports        map[string]configExport
 	workerToken    string
 	workerCA       string
@@ -54,21 +58,58 @@ type configExport struct {
 	expires time.Time
 }
 
-// Listen permits only an explicit loopback IP. Binding a wildcard interface
-// would expose a tool that can send traffic to arbitrary configured targets.
-func Listen(address string) (net.Listener, error) {
+// Listen permits loopback by default. A remote listener requires an explicit
+// HTTPS public origin so Host and Origin checks remain bound to one ingress URL.
+func Listen(address, publicOrigin string) (net.Listener, error) {
 	host, _, err := net.SplitHostPort(address)
 	if err != nil {
-		return nil, fmt.Errorf("listen address must include a loopback IP and port: %w", err)
+		return nil, fmt.Errorf("listen address must include an explicit IP and port: %w", err)
 	}
 	ip := net.ParseIP(host)
-	if ip == nil || !ip.IsLoopback() {
-		return nil, fmt.Errorf("dashboard listen address must use a loopback IP (127.0.0.1 or ::1)")
+	if ip == nil {
+		return nil, fmt.Errorf("dashboard listen address must use an explicit IP")
+	}
+	if ip.IsLoopback() {
+		if publicOrigin != "" {
+			return nil, fmt.Errorf("-public-origin is only valid with a non-loopback listen address")
+		}
+	} else {
+		if publicOrigin == "" {
+			return nil, fmt.Errorf("non-loopback dashboard listeners require -public-origin https://host")
+		}
+		if _, _, err := parsePublicOrigin(publicOrigin); err != nil {
+			return nil, err
+		}
 	}
 	return net.Listen("tcp", address)
 }
 
-func New(ctx context.Context, dir, host string) (*Server, error) {
+func parsePublicOrigin(raw string) (host, origin string, err error) {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
+		return "", "", fmt.Errorf("-public-origin must be an HTTPS origin such as https://gmeter.example.com, without a path, credentials, query, or fragment")
+	}
+	name := strings.ToLower(u.Hostname())
+	if name == "" || strings.Contains(name, "%") {
+		return "", "", fmt.Errorf("-public-origin must contain a valid DNS name or IP address")
+	}
+	authority := name
+	if strings.Contains(name, ":") {
+		authority = "[" + name + "]"
+	}
+	if rawPort := u.Port(); rawPort != "" {
+		port, parseErr := strconv.Atoi(rawPort)
+		if parseErr != nil || port < 1 || port > 65535 {
+			return "", "", fmt.Errorf("-public-origin port must be between 1 and 65535")
+		}
+		if port != 443 {
+			authority = net.JoinHostPort(name, strconv.Itoa(port))
+		}
+	}
+	return authority, "https://" + authority, nil
+}
+
+func New(ctx context.Context, dir, host, origin string) (*Server, error) {
 	saved, err := openStore(dir)
 	if err != nil {
 		return nil, err
@@ -77,21 +118,32 @@ func New(ctx context.Context, dir, host string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Server{store: saved, ctx: ctx, token: token, host: host, exports: map[string]configExport{}, workerToken: os.Getenv("GMETER_WORKER_TOKEN"), workerCA: os.Getenv("GMETER_WORKER_CA"), telemetryToken: os.Getenv("GMETER_TELEMETRY_TOKEN"), telemetryCA: os.Getenv("GMETER_TELEMETRY_CA")}, nil
+	return &Server{store: saved, ctx: ctx, token: token, host: host, origin: origin, secureCookie: strings.HasPrefix(origin, "https://"), exports: map[string]configExport{}, workerToken: os.Getenv("GMETER_WORKER_TOKEN"), workerCA: os.Getenv("GMETER_WORKER_CA"), telemetryToken: os.Getenv("GMETER_TELEMETRY_TOKEN"), telemetryCA: os.Getenv("GMETER_TELEMETRY_CA")}, nil
 }
 
-func Serve(ctx context.Context, address, dir string, output io.Writer) error {
-	ln, err := Listen(address)
+func Serve(ctx context.Context, address, dir, publicOrigin string, output io.Writer) error {
+	ln, err := Listen(address, publicOrigin)
 	if err != nil {
 		return err
 	}
 	defer ln.Close()
-	s, err := New(ctx, dir, ln.Addr().String())
+	host := ln.Addr().String()
+	origin := "http://" + host
+	if publicOrigin != "" {
+		host, origin, err = parsePublicOrigin(publicOrigin)
+		if err != nil {
+			return err
+		}
+	}
+	s, err := New(ctx, dir, host, origin)
 	if err != nil {
 		return err
 	}
+	if publicOrigin != "" {
+		fmt.Fprintln(output, "Warning: gmeter is single-user; protect this listener with a VPN or ingress authentication and an allowlist.")
+	}
 	httpServer := &http.Server{Handler: s, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 << 10}
-	fmt.Fprintf(output, "gmeter dashboard: http://%s\nSaved scenarios and runs: %s\n", ln.Addr(), dir)
+	fmt.Fprintf(output, "gmeter dashboard: %s\nDashboard listener: %s\nSaved scenarios and runs: %s\n", origin, ln.Addr(), dir)
 	stopped := make(chan struct{})
 	go func() {
 		select {
@@ -139,7 +191,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusForbidden, "Cross-site requests are not allowed.")
 		return
 	}
-	if origin := r.Header.Get("Origin"); origin != "" && origin != "http://"+s.host {
+	if origin := r.Header.Get("Origin"); origin != "" && origin != s.origin {
 		fail(w, http.StatusForbidden, "Origin does not match the dashboard.")
 		return
 	}
@@ -188,7 +240,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/":
 		// This cookie authorizes only read-only native downloads. API mutations
 		// still require the startup token in a custom header.
-		http.SetCookie(w, &http.Cookie{Name: "gmeter-download", Value: s.token, Path: "/download/", HttpOnly: true, SameSite: http.SameSiteStrictMode})
+		http.SetCookie(w, &http.Cookie{Name: "gmeter-download", Value: s.token, Path: "/download/", HttpOnly: true, Secure: s.secureCookie, SameSite: http.SameSiteStrictMode})
 		page, _ := assets.ReadFile("assets/index.html")
 		t, err := template.New("dashboard").Parse(string(page))
 		if err != nil {

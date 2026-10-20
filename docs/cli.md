@@ -16,7 +16,7 @@ positional arguments.
 | `gmeter version` | Print the binary's version |
 | `gmeter validate -config path.json` | Parse and validate one configuration without network requests |
 | `gmeter run [flags]` | Validate, execute a workload, and write configured reports |
-| `gmeter ui [flags]` | Start the local dashboard |
+| `gmeter ui [flags]` | Start the dashboard; loopback by default |
 | `gmeter worker [flags]` | Start an authenticated rate-mode worker |
 
 Each command accepts `-help`. Build with `make build` or the Go commands in
@@ -100,7 +100,8 @@ or an importable dashboard run bundle.
 
 | Command | Flag | Default | Meaning |
 | --- | --- | --- | --- |
-| `ui` | `-listen` | `127.0.0.1:8790` | Explicit loopback IP and port; port 0 chooses an available port |
+| `ui` | `-listen` | `127.0.0.1:8790` | Explicit IP and port; non-loopback requires `-public-origin` |
+| `ui` | `-public-origin` | empty | Exact HTTPS origin for a trusted private ingress; no path prefixes |
 | `ui` | `-data` | `.gmeter` | Saved scenarios and history directory |
 | `worker` | `-listen` | `127.0.0.1:8801` | Explicit listen IP and port; non-loopback requires TLS |
 | `worker` | `-name` | hostname, or `worker` | Worker display name |

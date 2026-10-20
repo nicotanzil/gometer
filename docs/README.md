@@ -28,6 +28,7 @@ contextual explanations, and troubleshooting.
 | [JMeter JMX import](jmx-import.md) | Guided compatibility review, supported HTTP mappings, and non-runnable migration drafts |
 | [HTTPS](https.md) | Verified defaults, opt-in insecure workload requests, and separate trust settings |
 | [Distributed workers](workers.md) | Tokens, TLS, shared schedules, quotas, cancellation, and unknown traffic |
+| [Kubernetes deployment](kubernetes.md) | Private dashboard ingress, persistent state, and stable worker pod identities |
 | [Generator diagnostics](diagnostics.md) | Process resources, connection reuse, HTTP timings, and instrumentation limits |
 | [Target-server telemetry](telemetry.md) | Selected exporter series, authentication, gaps, counter resets, and coverage |
 
@@ -38,6 +39,8 @@ its binary does not need the source tree at runtime.
 
 - [Operations](operations.md): run planning, artifacts, retention, workspace backup,
   shutdown, recovery, and troubleshooting.
+- Private Kubernetes exposure uses a fixed HTTPS origin and an authenticated,
+  allowlisted VPN/ingress; see [operations](operations.md) and [workers](workers.md).
 - [Security](../SECURITY.md): trust boundaries, data handling, and reporting a concern.
 - [Enterprise readiness](readiness.md): existing safeguards and outstanding adoption gates.
 - [Architecture](architecture.md): components and execution/data flows.

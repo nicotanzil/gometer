@@ -88,6 +88,14 @@ starting, canceling, and reading jobs. Network controls and certificate/token
 distribution remain your setup's responsibility. Each worker receives the target
 configuration, including headers, bodies, and data rows.
 
+For Kubernetes, use a fixed-replica StatefulSet and a headless Service so each
+worker has a stable per-pod DNS name. Enter each worker's HTTPS pod DNS name in
+the coordinator's Workers field. Do not point multiple worker entries at one
+load-balanced Service: the coordinator treats each origin as a distinct worker.
+Mount the shared control token and TLS keypair from Secrets, and mount the CA
+certificate in the dashboard pod for `GMETER_WORKER_CA`. Restrict worker ingress
+to the dashboard and worker egress to the intended test targets.
+
 ## Shared schedule and capacity
 
 The rate is a **fleet total**. Global arrival ordinal `k` belongs to worker

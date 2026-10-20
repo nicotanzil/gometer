@@ -1,0 +1,6 @@
+.git
+.gmeter
+.DS_Store
+bin/
+results/
+work/

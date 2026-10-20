@@ -4,8 +4,8 @@
 
 Use gmeter as a bounded experiment: choose the target and acceptance criteria,
 record the environment, run the workload, retain evidence, and inspect what was
-actually delivered. The dashboard is local and single-user. Distributed load
-uses the separate [worker control plane](workers.md).
+actually delivered. The dashboard is single-user and listens on loopback by
+default. Distributed load uses the separate [worker control plane](workers.md).
 
 ## Plan a repeatable run
 
@@ -57,6 +57,24 @@ New workspace directories use 0700 and JSON records use 0600 on systems that
 support these modes. Existing directory permissions are not tightened. On other
 platforms, configure equivalent account and filesystem access controls.
 The data is not encrypted at rest.
+
+## Private ingress access
+
+The dashboard listens on loopback by default. A cluster deployment can opt into
+a non-loopback listener behind a TLS-terminating private ingress by setting an
+exact HTTPS origin:
+
+```sh
+./bin/gmeter ui -listen 0.0.0.0:8790 \
+  -public-origin https://gmeter.example.internal \
+  -data /data
+```
+
+The ingress must preserve the browser's `Host` and `Origin` headers and route the
+root path without a prefix. It must enforce VPN access or authentication plus an
+allowlist. The origin setting validates request boundaries; it does not provide
+user authentication. Keep one dashboard replica and one private persistent volume
+for its data directory. Do not share that directory between pods.
 
 | Item | Current bound / retention |
 | --- | --- |

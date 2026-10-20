@@ -19,7 +19,7 @@ import (
 
 func testServer(t *testing.T) *Server {
 	t.Helper()
-	s, err := New(context.Background(), t.TempDir(), "127.0.0.1:8790")
+	s, err := New(context.Background(), t.TempDir(), "127.0.0.1:8790", "http://127.0.0.1:8790")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,10 +110,59 @@ func TestBrowserBoundaryAndStrictValidation(t *testing.T) {
 		t.Fatal("invalid run ID accepted")
 	}
 	for _, address := range []string{"0.0.0.0:8790", "localhost:8790", ":8790", "192.0.2.1:8790"} {
-		ln, err := Listen(address)
+		ln, err := Listen(address, "")
 		if err == nil {
 			ln.Close()
 			t.Fatalf("non-loopback listener allowed: %s", address)
+		}
+	}
+}
+
+func TestRemoteDashboardRequiresExactHTTPSOrigin(t *testing.T) {
+	for _, origin := range []string{"", "http://gmeter.example.test", "https://gmeter.example.test/app", "https://user@gmeter.example.test", "https://gmeter.example.test?next=/"} {
+		if ln, err := Listen("0.0.0.0:8790", origin); err == nil {
+			ln.Close()
+			t.Fatalf("remote listener accepted origin %q", origin)
+		}
+	}
+	ln, err := Listen("0.0.0.0:0", "https://gmeter.example.test")
+	if err != nil {
+		t.Fatalf("valid private HTTPS origin rejected: %v", err)
+	}
+	ln.Close()
+}
+
+func TestPublicOriginProtectsDashboardHostOriginAndDownloadCookie(t *testing.T) {
+	const host = "gmeter.example.test"
+	s, err := New(context.Background(), t.TempDir(), host, "https://"+host)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(s.Close)
+
+	r := httptest.NewRequest("GET", "https://"+host+"/", nil)
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("public origin request: %d %s", w.Code, w.Body)
+	}
+	cookie := w.Result().Cookies()[0]
+	if !cookie.Secure || !cookie.HttpOnly || cookie.Path != "/download/" {
+		t.Fatalf("download cookie lacks secure attributes: %+v", cookie)
+	}
+
+	for _, tc := range []struct{ host, origin string }{
+		{"other.example.test", "https://" + host},
+		{host, "https://other.example.test"},
+	} {
+		r := httptest.NewRequest("POST", "https://"+host+"/api/validate", strings.NewReader(`{}`))
+		r.Host = tc.host
+		r.Header.Set("Origin", tc.origin)
+		r.Header.Set("X-Gmeter-Token", s.token)
+		w := httptest.NewRecorder()
+		s.ServeHTTP(w, r)
+		if w.Code != http.StatusForbidden {
+			t.Fatalf("accepted mismatched host/origin %q %q: %d", tc.host, tc.origin, w.Code)
 		}
 	}
 }
@@ -220,7 +269,7 @@ func TestRunPersistsProgressAndReportsAndSurvivesReload(t *testing.T) {
 	if err != nil || info.Mode().Perm() != 0600 {
 		t.Fatalf("file permissions: %v %v", info, err)
 	}
-	reopened, err := New(context.Background(), s.store.dir, s.host)
+	reopened, err := New(context.Background(), s.store.dir, s.host, s.origin)
 	if err != nil {
 		t.Fatal(err)
 	}
