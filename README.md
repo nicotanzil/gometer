@@ -3,157 +3,138 @@
   <img src="internal/design/assets/gometer-logo-light.svg" alt="GoMeter" width="323" height="80">
 </picture></h1>
 
-**HTTP load testing with visible offered demand.**
+**HTTP load testing with a visual dashboard and CLI.**
 
-Build tests in a local browser dashboard or run them from the CLI. GoMeter measures
-planned arrivals, delivered traffic, response errors, and missed demand separately,
-so a fast response time cannot hide load the generator never sent.
+Build tests, model application journeys, and inspect live results. GoMeter tracks
+planned arrivals, delivered traffic, errors, and missed demand separately, so
+missed traffic stays visible alongside latency.
 
-Written in Go. The compiled binary embeds the dashboard and starter configurations;
-using it requires no Java, Node.js, or external frontend assets.
+A single Go binary includes the dashboard and starter configurations. No Java,
+Node.js, or external frontend assets are required at runtime.
 
 [Get started](docs/getting-started.md) · [Documentation](docs/README.md) ·
 [CLI reference](docs/cli.md) · [Roadmap](ROADMAP.md)
 
-## Start locally
+![GoMeter walkthrough: configure a test, watch live metrics, and review results](docs/images/walkthrough.gif)
 
-From a source checkout, install **Go 1.24 or newer** and build both executables:
+## Quick start
+
+Install **Go 1.24 or newer**, then build from a source checkout:
 
 ```sh
 go build -o bin/gometer ./cmd/gometer
 go build -o bin/gometer-demo ./cmd/gometer-demo
 ```
 
-On Windows, build with `bin/gometer.exe` and `bin/gometer-demo.exe` instead.
-If you have Make installed, `make build` builds both executables.
+Alternatively, use `make build`. On Windows, add `.exe` to both output filenames.
 
-Start the demo in one terminal:
+Start the bundled demo:
 
 ```sh
 ./bin/gometer-demo
 ```
 
-Start the dashboard in another:
+In another terminal, start the dashboard:
 
 ```sh
 ./bin/gometer ui
 ```
 
-Open the URL printed by GoMeter, normally **http://127.0.0.1:8790**, and choose
-**User guide → Your first test**. Loading its practice configuration and validating
-it send no workload traffic. **Start run** sends the requests. Saved scenarios and
-run history live in `.gometer/` by default. Use `-data` to choose a different workspace.
+Open the printed URL, normally **http://127.0.0.1:8790**, and select
+**User guide → Your first test**. Load the practice configuration, validate it,
+then select **Start run** to send traffic. Validation sends no workload traffic.
 
-For a multi-step workflow, load **Authenticated checkout journeys** to open the
-**Journey canvas**. Edit requests and response checks, trace extracted variables,
-reorder steps, and build executable nested branches and loops visually. See the [canvas guide](docs/dashboard.md#edit-a-journey-on-the-flow-canvas).
+Scenarios and history are saved in `.gometer/`. Use `-data` to select another
+workspace. See [Getting started](docs/getting-started.md) for a complete walkthrough.
 
-![Journey canvas with execution order, extracted-data links, and a request inspector](docs/images/journey-canvas.png)
+### Run from the CLI
 
-Load **Branches and loops** to explore a nested example. [Flow syntax and limits](docs/scenarios.md#branches-and-loops).
-
-![Executable branches and loops on the journey canvas](docs/images/journey-flow.png)
-
-For prepared input, import a [CSV dataset](docs/datasets.md) under **Journey settings & data**. Map columns to variables, choose shared or per-user rows, and recycle or finish users normally at EOF. This increment supports local users-mode journeys.
-
-Coming from JMeter? Choose **Import JMeter JMX** in the builder. Review component
-compatibility, supply properties, preview the mapped journey, then save a native
-scenario or a separate migration draft. This first converter accepts a limited
-set of JMeter 5.6.3 HTTP plans; unsupported behavior blocks runnable conversion.
-See the [JMX import guide](docs/jmx-import.md) for the exact scope and runtime differences.
-
-<details>
-<summary>JMeter import compatibility review</summary>
-
-![Guided JMX component review with runtime policies and property inputs](docs/images/jmx-import.jpg)
-
-</details>
-
-Prefer the CLI? With the demo still running:
+With the demo running:
 
 ```sh
 ./bin/gometer validate -config examples/smoke.json
 ./bin/gometer run -config examples/smoke.json
 ```
 
-The smoke example plans 40 arrivals over two seconds. A healthy default demo
-normally passes; inspect the output and checks on your machine. JSON and
-self-contained HTML reports are written under `results/`. See the
-[step-by-step guide](docs/getting-started.md) for setup, expected results, and fixes.
+The smoke test schedules 40 arrivals over two seconds. JSON and self-contained
+HTML reports are saved under `results/`.
 
-## See the app
+## Capabilities
 
-Watch delivered traffic, latency, errors, and missed arrivals, then inspect the
-final acceptance checks. Generator diagnostics and optional server telemetry
-provide additional context.
-
-![GoMeter walkthrough: validate a local test, watch live measurements, and review completed results](docs/images/walkthrough.gif)
-
-<details>
-<summary>Completed run screenshot</summary>
-
-![GoMeter completed local demo run showing measurements, checks, and traffic charts](docs/images/run-results.jpg)
-
-</details>
+| Area | Support |
+| --- | --- |
+| HTTP | HTTP/1.1 and HTTPS with HTTP/2 negotiation; custom methods, headers, bodies, status checks, and pooled connections |
+| Traffic | Concurrent users, duration and iteration limits, ramp-up, startup delay, arrival rates, sequential phases, pauses, and seeded jitter |
+| Visual journeys | Requests, nested branches and loops, cookies, variables, extraction, assertions, weighted mixes, and dependency links; [canvas guide](docs/dashboard.md#edit-a-journey-on-the-flow-canvas) |
+| Test data | Inline data and CSV import with column mapping, shared or per-user rows, and end-of-file controls; CSV supports local users-mode journeys; [dataset guide](docs/datasets.md) |
+| Checks and failure handling | Latency, error rate, missed demand, and minimum throughput checks; configurable user and test stop actions; [configuration](docs/configuration.md) |
+| Authoring | Guided builder, starter tests, Advanced JSON, saved scenarios, and an in-app guide |
+| JMeter import | Guided compatibility review and conversion of supported JMeter 5.6.3 HTTP plans; unsupported behavior blocks runnable conversion; [import scope](docs/jmx-import.md) |
+| Results | Live charts, history, two-run comparison, JSON/HTML reports, and portable run bundles |
+| Diagnostics | Generator resources, arrival delay, connection reuse, HTTP timings, and selected Prometheus exporter gauges and counters |
+| Distributed runs | Authenticated workers, shared rate schedules, concurrency quotas, and incomplete-result detection; rate mode only; [worker guide](docs/workers.md) |
 
 <details>
-<summary>Test builder and new-user walkthrough</summary>
+<summary>Screenshots</summary>
 
-Create a test with request settings, traffic phases, and explicit pass criteria.
-The preview explains what the configuration plans to send before you start it.
+### Journey canvas
 
-![GoMeter test builder with request, traffic, pass criteria, and planned demand](docs/images/test-builder.jpg)
+Edit requests, inspect extracted data, and reorder steps. Try the
+**Authenticated checkout journeys** starter.
 
-The in-app **User guide** explains a first local test, settings, results, and
-troubleshooting. Contextual help returns to the builder without replacing a draft.
+![Journey canvas with execution order, extracted-data links, and a request inspector](docs/images/journey-canvas.png)
+
+Use **Branches and loops** to explore nested control flow.
+[Flow syntax](docs/scenarios.md#branches-and-loops).
+
+![Executable branches and loops on the journey canvas](docs/images/journey-flow.png)
+
+### JMeter import
+
+Review compatibility, provide properties, and save a native scenario or migration draft.
+
+![JMX compatibility review with runtime policies and property inputs](docs/images/jmx-import.jpg)
+
+### Test builder
+
+Configure requests, traffic, and acceptance checks before starting a run.
+
+![GoMeter test builder with request, traffic, checks, and planned demand](docs/images/test-builder.jpg)
+
+### Results
+
+Review traffic, latency, errors, missed arrivals, and acceptance checks.
+
+![GoMeter completed demo run with metrics, checks, and traffic charts](docs/images/run-results.jpg)
+
+### User guide
+
+Follow the first-test walkthrough or find help with settings and results.
 
 ![GoMeter user guide with first-test instructions and practice settings](docs/images/user-guide.jpg)
 
 </details>
 
-Screenshots and the recording use the bundled local demo. Their measurements
-illustrate the app; they are not benchmarks. [Capture notes](docs/images/README.md).
+All captures use the bundled demo. The measurements are examples, not benchmarks.
+[Capture notes](docs/images/README.md).
 
-## What you can do today
+## Measurement model
 
-| Capability | Current support |
-| --- | --- |
-| HTTP workloads | HTTP/1.1 and HTTPS with HTTP/2 negotiation; methods, headers, bodies, status checks, pooled connections |
-| Traffic models | Concurrent users with duration/iteration limits, ramp-up and startup delay; fixed arrival rate, sequential rate phases, zero-rate pauses, seeded jitter |
-| Failure actions | Users can start the next iteration, continue the journey while retaining errors, stop only the failed user, or stop the test gracefully/immediately; [behavior and limits](docs/configuration.md#failure-actions) |
-| Application journeys | Nested if/else, fixed-count and bounded while loops, isolated cookies, inline data, variables, extraction, assertions, weighted scenario mixes |
-| Journey canvas | Visual request/control editing, path changes, dependency links, pauses, undo, structure preview, and observed request/decision/iteration counts |
-| Acceptance checks | Request and journey latency, error rates, missed demand, minimum started throughput |
-| Authoring | Guided builder, starter configurations, Advanced JSON, saved scenarios, first-test guide |
-| JMeter migration | Guided JMX analysis, limited HTTP conversion, property inputs, original source retention, and separate migration drafts |
-| Results | Live charts, history, two-run comparison, JSON/HTML reports, portable run bundles |
-| Generator diagnostics | Process resources, arrival delay, connection reuse, and HTTP transport timings |
-| Target-server telemetry | Selected scalar gauges/counters from a Prometheus text exporter, with explicit gaps and resets |
-| Distributed execution | Authenticated workers, shared rate schedule, fixed concurrency quotas, incomplete-result detection |
+- **Demand:** scheduled arrivals are recorded as started work or capacity/scheduler
+  misses. Missed work has no response-latency sample.
+- **Units:** journey arrivals and HTTP throughput are separate. A three-step
+  journey can produce three HTTP attempts.
+- **Latency:** includes the full response body and completed failed attempts.
+  Percentiles are bounded-histogram estimates.
+- **Pass criteria:** a pass means the run completed and its configured checks
+  passed. Review errors, missed demand, latency, and execution conditions together.
 
-Full bundled JMeter parity is an active [development program](docs/jmeter-parity.md).
-Distributed users, browser JavaScript execution, and non-HTTP protocol adapters
-are not available. Recording and more authentication
-options remain on the roadmap. No benchmark establishes a performance advantage
-against JMeter.
+See [Measurement definitions](docs/measurements.md) before making capacity or
+performance comparisons. No benchmark establishes a performance advantage over JMeter.
 
-## Understand the measurements
+## CI usage
 
-- **Offered demand:** scheduled arrivals are accounted for as started work or
-  capacity/scheduler misses. Missed work has no response-latency sample.
-- **Requests and journeys:** a three-step journey can produce three HTTP attempts.
-  Journey arrival targets and request throughput use different units.
-- **Response latency:** includes the full response body and completed failed
-  attempts. Percentiles are bounded-histogram estimates.
-- **A pass:** the run completed and its configured checks passed. Review errors,
-  missed demand, latency, and execution conditions together.
-
-Read the [measurement definitions](docs/measurements.md) before using results for
-capacity decisions or comparisons.
-
-## Automate a test
-
-Run the compiled binary in CI and retain its reports even when checks fail:
+With the demo running, execute a test and retain reports even if checks fail:
 
 ```sh
 ./bin/gometer run -config examples/smoke.json -quiet \
@@ -162,41 +143,37 @@ Run the compiled binary in CI and retain its reports even when checks fail:
 
 | Exit code | Meaning |
 | --- | --- |
-| `0` | Completed; all acceptance checks passed |
-| `1` | Acceptance checks failed, including incomplete distributed results |
-| `2` | Input, setup/control, or report output error |
+| `0` | Completed; all checks passed |
+| `1` | Checks failed, including incomplete distributed results |
+| `2` | Input, setup, control, or report output error |
 | `130` | Interrupted; partial reports attempted |
 
-The example needs the demo running. Stress and telemetry examples intentionally
-overload it and normally return `1`. See [CLI and CI usage](docs/cli.md#ci-usage)
-for preserving the exit code and artifacts.
+Stress and telemetry examples intentionally overload the demo and normally return
+`1`. See [CI guidance](docs/cli.md#ci-usage) for exit codes and artifact handling.
 
 ## Documentation
 
-| Task | Guide |
+| Topic | Guides |
 | --- | --- |
-| Run your first test | [Getting started](docs/getting-started.md) |
-| Create, save, compare, and export tests | [Browser dashboard](docs/dashboard.md) |
-| Configure requests, traffic, and checks | [Configuration reference](docs/configuration.md) |
-| Script tests and use environment options | [CLI reference](docs/cli.md) |
-| Build authenticated multi-step workflows | [Application journeys](docs/scenarios.md) |
-| Interpret latency, demand, and verdicts | [Measurements](docs/measurements.md) and [diagnostics](docs/diagnostics.md) |
-| Run worker fleets and collect server metrics | [Workers](docs/workers.md) and [telemetry](docs/telemetry.md) |
-| Deploy a private dashboard and worker pods | [Kubernetes](docs/kubernetes.md) |
-| Operate, back up, and troubleshoot | [Operations](docs/operations.md) |
-| Review security and adoption requirements | [Security](SECURITY.md), [HTTPS](docs/https.md), and [enterprise readiness](docs/readiness.md) |
-| Contribute or understand the code | [Contributing](CONTRIBUTING.md) and [architecture](docs/architecture.md) |
+| Setup and authoring | [Getting started](docs/getting-started.md), [dashboard](docs/dashboard.md), [configuration](docs/configuration.md), [CLI](docs/cli.md) |
+| Journeys and migration | [Journeys](docs/scenarios.md), [CSV datasets](docs/datasets.md), [JMeter import](docs/jmx-import.md) |
+| Results and diagnostics | [Measurements](docs/measurements.md), [diagnostics](docs/diagnostics.md), [telemetry](docs/telemetry.md) |
+| Deployment and operations | [Workers](docs/workers.md), [Kubernetes](docs/kubernetes.md), [operations](docs/operations.md) |
+| Security and adoption | [Security](SECURITY.md), [HTTPS](docs/https.md), [readiness](docs/readiness.md) |
+| Development | [Contributing](CONTRIBUTING.md), [architecture](docs/architecture.md), [roadmap](ROADMAP.md) |
 
 ## Project status
 
-Active development. The dashboard is a single-user application that listens on
-loopback by default; optional remote access requires a private authenticated
-ingress. Remote workers use a separate authenticated control plane. Enterprise adoption should
-follow the documented [readiness gates](docs/readiness.md), including release,
-security, operational, and independent measurement validation.
+GoMeter is in active development. The dashboard is single-user and listens on
+loopback by default. Remote access requires a private authenticated ingress;
+remote workers use a separate authenticated control plane. Review the
+[readiness gates](docs/readiness.md) before enterprise adoption.
 
-The repository currently has no LICENSE file. Selecting a license is an open
-maintainer decision, tracked in the readiness guide.
+Distributed users, browser JavaScript execution, and non-HTTP adapters are not
+supported. Recording and additional authentication options are planned. Full
+JMeter parity is tracked in the [parity program](docs/jmeter-parity.md).
 
-To check a development checkout, run `make check build` (JavaScript checks, vet,
-race-enabled tests, and both builds). See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites and equivalent commands.
+The repository has no LICENSE file. License selection remains a maintainer decision.
+
+For development checks and builds, run `make check build`.
+See [Contributing](CONTRIBUTING.md) for prerequisites and equivalent commands.
