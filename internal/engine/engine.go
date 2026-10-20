@@ -15,10 +15,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"gmeter/internal/config"
-	"gmeter/internal/diagnostics"
-	"gmeter/internal/metrics"
-	"gmeter/internal/telemetry"
+	"gometer/internal/config"
+	"gometer/internal/diagnostics"
+	"gometer/internal/metrics"
+	"gometer/internal/telemetry"
 )
 
 type Check struct {

@@ -2,7 +2,7 @@ package dashboard
 
 import (
 	"encoding/json"
-	"gmeter/internal/config"
+	"gometer/internal/config"
 	"io"
 	"net/http"
 	"strings"

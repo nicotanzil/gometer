@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 // User counts describe virtual-user lifecycles, not HTTP concurrency. A user

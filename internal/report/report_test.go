@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"gmeter/internal/diagnostics"
-	"gmeter/internal/engine"
-	"gmeter/internal/metrics"
+	"gometer/internal/diagnostics"
+	"gometer/internal/engine"
+	"gometer/internal/metrics"
 )
 
 func TestReportFontsAreSelfContained(t *testing.T) {

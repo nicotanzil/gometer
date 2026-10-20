@@ -3,7 +3,7 @@
 [Project overview](README.md) · [Documentation](docs/README.md)
 
 This document describes the current implementation and its operating boundaries.
-gmeter is a local single-user tool with optional authenticated workers. It has
+GoMeter is a local single-user tool with optional authenticated workers. It has
 not been independently security-audited and does not provide a multi-tenant
 service security model or a security certification.
 
@@ -53,7 +53,7 @@ bodies are not retained in reports; assertion/extraction captures are bounded
 and temporary. These rules are not general-purpose redaction: sensitive values
 can still be placed in URLs, names, configuration, or telemetry selections.
 
-`GMETER_WORKER_TOKEN` and `GMETER_TELEMETRY_TOKEN` are private runtime options;
+`GOMETER_WORKER_TOKEN` and `GOMETER_TELEMETRY_TOKEN` are private runtime options;
 their values do not enter saved configuration, reports, or browser payloads.
 Use your environment's secret-injection mechanism. Do not commit credentials,
 workspace files, private keys, or unreviewed artifacts. Downloads and copied

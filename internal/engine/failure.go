@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 type FailurePolicy struct {

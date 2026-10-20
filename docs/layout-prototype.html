@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>gmeter · Builder layout prototype</title>
+  <title>GoMeter · Builder layout prototype</title>
   <!-- Three throwaway variants of the existing Build a test page, selected with ?variant=A|B|C. -->
   <style>
     @font-face{font-family:Plex Sans;src:url(../internal/dashboard/assets/IBMPlexSans-Regular.woff2) format("woff2");font-weight:400;font-display:swap}
@@ -191,7 +191,7 @@
 
   <div id="variant-A" class="variant a-shell">
     <aside class="a-sidebar">
-      <div class="brand"><span class="brand-mark">g</span>gmeter</div>
+      <div class="brand"><span class="brand-mark">G</span>GoMeter</div>
       <nav class="nav-list dark" aria-label="Workspace A"><button class="current" type="button">Build a test</button><button type="button" data-placeholder>Live run</button><button type="button" data-placeholder>Run history</button><button type="button" data-placeholder>Guide</button></nav>
       <div class="foot"><span class="pill">LOCAL</span><p style="color:#a6c0c2;margin:10px 0 0">Build and verify a test on this machine.</p></div>
     </aside>
@@ -208,7 +208,7 @@
             </div>
             <div class="subsection"><h3>Pass criteria <span class="muted small">· optional, request level</span></h3><div class="field-row three"><label class="field">Request p95 under<div class="control"><input data-field="p95" type="number" min="1" value="300"><span class="unit">ms</span></div></label><label class="field">Errors at most<div class="control"><input data-field="errors" type="number" min="0" max="100" value="1"><span class="unit">%</span></div></label><label class="field">Missed arrivals at most<div class="control"><input data-field="misses" type="number" min="0" max="100" value="0.5"><span class="unit">%</span></div></label></div></div>
             <details class="extra"><summary>Request settings <span>· headers, body &amp; TLS</span></summary><div class="extra-body"><p class="helper">Headers and bodies stay available without lengthening the first run path.</p><label class="field">Request body<textarea rows="3" placeholder='{"cart_id":"demo"}'></textarea></label></div></details>
-            <details class="extra"><summary>Advanced setup <span>· phases, workers, telemetry &amp; JSON</span></summary><div class="extra-body"><p class="helper">The full gmeter configuration would live here in the app. This is a layout preview.</p></div></details>
+            <details class="extra"><summary>Advanced setup <span>· phases, workers, telemetry &amp; JSON</span></summary><div class="extra-body"><p class="helper">The full GoMeter configuration would live here in the app. This is a layout preview.</p></div></details>
           </div>
           <div class="screen-journey" hidden></div>
         </section>
@@ -218,7 +218,7 @@
   </div>
 
   <div id="variant-B" class="variant b-shell" hidden>
-    <header class="b-top"><div class="b-top-inner"><div class="brand"><span class="brand-mark">g</span>gmeter</div><nav class="nav-list" aria-label="Workspace B"><button class="current" type="button">Build</button><button type="button" data-placeholder>Live run</button><button type="button" data-placeholder>History</button><button type="button" data-placeholder>Guide</button></nav><span class="pill">LOCAL WORKSPACE</span></div></header>
+    <header class="b-top"><div class="b-top-inner"><div class="brand"><span class="brand-mark">G</span>GoMeter</div><nav class="nav-list" aria-label="Workspace B"><button class="current" type="button">Build</button><button type="button" data-placeholder>Live run</button><button type="button" data-placeholder>History</button><button type="button" data-placeholder>Guide</button></nav><span class="pill">LOCAL WORKSPACE</span></div></header>
     <main class="b-main"><div class="b-heading"><div><div class="eyebrow">B · LAUNCHPAD</div><h1>Configure, verify, run</h1><p>A single launch area holds the target, traffic, and action.</p></div><button class="button" type="button" data-placeholder>↑ Import JSON</button></div>
       <div class="section-tabs" style="margin-bottom:14px"><button type="button" data-screen="settings" aria-pressed="true">Single request</button><button type="button" data-screen="journey" aria-pressed="false">Journey canvas</button></div>
       <div class="screen-settings"><section class="b-launch" aria-label="Quick launch B"><div class="panel-head"><h2>Quick launch</h2><span class="pill">FIXED ARRIVAL RATE</span></div>
@@ -234,7 +234,7 @@
   </div>
 
   <div id="variant-C" class="variant c-shell" hidden>
-    <header class="c-top"><div class="brand"><span class="brand-mark">g</span>gmeter</div><nav class="nav-list dark" aria-label="Workspace C"><button class="current" type="button">Build a test</button><button type="button" data-placeholder>Live run</button><button type="button" data-placeholder>History</button><button type="button" data-placeholder>Guide</button></nav></header>
+    <header class="c-top"><div class="brand"><span class="brand-mark">G</span>GoMeter</div><nav class="nav-list dark" aria-label="Workspace C"><button class="current" type="button">Build a test</button><button type="button" data-placeholder>Live run</button><button type="button" data-placeholder>History</button><button type="button" data-placeholder>Guide</button></nav></header>
     <main class="c-main"><div class="c-heading"><div><div class="eyebrow">C · GUIDED FLOW</div><h1>Build a test</h1><p>One decision at a time, with a clear review before launch.</p></div><button class="button" type="button" data-placeholder>↑ Import JSON</button></div>
       <div class="section-tabs" style="margin-bottom:14px"><button type="button" data-screen="settings" aria-pressed="true">Test settings</button><button type="button" data-screen="journey" aria-pressed="false">Journey canvas</button></div>
       <div class="screen-settings"><div class="c-overview"><div class="facts"><span>Scenario <strong data-summary="name">Checkout capacity test</strong></span><span>Target <strong data-summary="short-url" class="mono">/checkout</strong></span><span>Rate <strong data-summary="rate">250 req/s</strong></span><span>Duration <strong data-summary="duration">10 min</strong></span></div><span class="pill">DRAFT</span></div>

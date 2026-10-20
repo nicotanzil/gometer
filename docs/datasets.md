@@ -84,11 +84,11 @@ flag reads a file. It replaces the selected journey's existing CSV/inline data
 for that invocation; it does not rewrite the configuration file.
 
 ```sh
-./bin/gmeter validate -config scenario.json -csv people.csv \
+./bin/gometer validate -config scenario.json -csv people.csv \
   -csv-scenario Search -csv-columns '{"Full Name":"username","item":"item"}' \
   -csv-sharing shared -csv-eof stop_user
 
-./bin/gmeter run -config scenario.json -csv people.csv \
+./bin/gometer run -config scenario.json -csv people.csv \
   -csv-scenario Search -csv-columns '{"Full Name":"username","item":"item"}' \
   -csv-sharing shared -csv-eof stop_user
 ```

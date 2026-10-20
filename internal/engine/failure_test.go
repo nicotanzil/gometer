@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 func TestFailureActionsAcrossNestedLoopAndOuterIterations(t *testing.T) {

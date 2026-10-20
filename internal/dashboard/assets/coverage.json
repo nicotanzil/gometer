@@ -595,7 +595,7 @@
     {
       "id": "drops",
       "name": "Explicit missed-demand accounting",
-      "group": "gmeter additions",
+      "group": "GoMeter additions",
       "status": "available",
       "detail": "Capacity and scheduler misses stay in planned-demand denominators; no catch-up burst or unbounded queue.",
       "stage": "Shipped",
@@ -605,7 +605,7 @@
     {
       "id": "fleet-schedule",
       "name": "Fleet-wide arrival partitioning",
-      "group": "gmeter additions",
+      "group": "GoMeter additions",
       "status": "available",
       "detail": "One total rate is partitioned over worker ordinals and fixed quotas rather than duplicating the full offered load per worker.",
       "stage": "Shipped",
@@ -615,7 +615,7 @@
     {
       "id": "target-metrics",
       "name": "Target-server metric observation",
-      "group": "gmeter additions",
+      "group": "GoMeter additions",
       "status": "available",
       "detail": "Opt-in selected Prometheus gauges/counters with coverage gaps, reset handling, and a bounded final observation independent of load checks.",
       "stage": "Shipped",
@@ -625,7 +625,7 @@
     {
       "id": "generator",
       "name": "Generator and transport diagnostics",
-      "group": "gmeter additions",
+      "group": "GoMeter additions",
       "status": "available",
       "detail": "Process resources plus sampled HTTP timing and connection facts; timing populations and observation limits stay visible.",
       "stage": "Shipped",
@@ -635,7 +635,7 @@
     {
       "id": "workspace",
       "name": "Local saved workspace and comparisons",
-      "group": "gmeter additions",
+      "group": "GoMeter additions",
       "status": "available",
       "detail": "Local run/scenario library, portable bundles, live charts, and descriptive comparison that flags differing conditions.",
       "stage": "Shipped",

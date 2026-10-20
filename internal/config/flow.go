@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gmeter/internal/correlation"
+	"gometer/internal/correlation"
 )
 
 const MaxFlowDepth = 8

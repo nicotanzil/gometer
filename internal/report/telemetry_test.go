@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"gmeter/internal/engine"
-	"gmeter/internal/telemetry"
+	"gometer/internal/engine"
+	"gometer/internal/telemetry"
 )
 
 func TestTelemetryReportEscapesSeriesAndDistinguishesZeroFromMissing(t *testing.T) {

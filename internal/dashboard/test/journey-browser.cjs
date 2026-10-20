@@ -12,7 +12,7 @@ const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const repo = path.resolve(__dirname, '../../..');
 
 async function main() {
-  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'gmeter-canvas-'));
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'gometer-canvas-'));
   let attempts = 0, dashboard, browser;
   const target = http.createServer(async (req, res) => {
     attempts++;
@@ -21,18 +21,18 @@ async function main() {
     res.setHeader('Content-Type', 'application/json');
     if (req.url === '/login') {
       const token = Buffer.from(body.username).toString('base64url');
-      res.setHeader('Set-Cookie', `gmeter_session=${token}; Path=/; HttpOnly`);
+      res.setHeader('Set-Cookie', `gometer_session=${token}; Path=/; HttpOnly`);
       res.setHeader('X-Demo-Session', token);
       res.end(JSON.stringify({token, user:{id:body.username}})); return;
     }
     const token = req.headers.authorization?.replace(/^Bearer /, '');
-    if (!token || !req.headers.cookie?.includes(`gmeter_session=${token}`)) { res.statusCode=401; res.end('{}'); return; }
+    if (!token || !req.headers.cookie?.includes(`gometer_session=${token}`)) { res.statusCode=401; res.end('{}'); return; }
     if (req.url.startsWith('/profile')) res.end(JSON.stringify({authenticated:true,user:{id:Buffer.from(token,'base64url').toString()}}));
     else res.end(JSON.stringify({ok:true,item:body.item,order_id:'test-order'}));
   });
   try {
     await new Promise(resolve => target.listen(0, '127.0.0.1', resolve));
-    dashboard = spawn(path.join(repo,'bin/gmeter'), ['ui','-listen','127.0.0.1:0','-data',workspace], {stdio:['ignore','pipe','pipe']});
+    dashboard = spawn(path.join(repo,'bin/gometer'), ['ui','-listen','127.0.0.1:0','-data',workspace], {stdio:['ignore','pipe','pipe']});
     const url = await new Promise((resolve,reject) => {
       const timeout=setTimeout(()=>reject(new Error('Dashboard startup timed out.')),15000);
       let output=''; dashboard.stdout.on('data',chunk=>{output+=chunk;const match=output.match(/http:\/\/127\.0\.0\.1:\d+/);if(match){clearTimeout(timeout);resolve(match[0]);}});
@@ -145,7 +145,7 @@ async function main() {
     }
     await page.setViewportSize({width:1440,height:1100});
     await request('Login'); await action('Fit').click();
-    if(process.env.GMETER_SCREENSHOT)await canvas.screenshot({path:process.env.GMETER_SCREENSHOT});
+    if(process.env.GOMETER_SCREENSHOT)await canvas.screenshot({path:process.env.GOMETER_SCREENSHOT});
     await action('Start run').click();
     await page.waitForFunction(()=>document.querySelector('#run-status').textContent==='PASSED',null,{timeout:20000});
     assert.equal(attempts,60);assert.equal(await page.locator('#run-journey-canvas .je-node').count(),3);
@@ -184,7 +184,7 @@ async function main() {
     for(const width of [1440,768,400,320]){await page.setViewportSize({width,height:1100});await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`Flow overflow at ${width}px`);}
     await page.setViewportSize({width:1600,height:1200});await request('Browse twice');
     assert.ok(parseInt(await canvas.locator('.je-zoom').innerText(),10)>=85,'Selecting a node must zoom to a readable size.');await action('Fit').click();
-    if(process.env.GMETER_FLOW_SCREENSHOT)await canvas.screenshot({path:process.env.GMETER_FLOW_SCREENSHOT});
+    if(process.env.GOMETER_FLOW_SCREENSHOT)await canvas.screenshot({path:process.env.GOMETER_FLOW_SCREENSHOT});
     await action('Start run').click();await page.waitForFunction(()=>document.querySelector('#run-status').textContent==='PASSED',null,{timeout:20000});
     assert.equal(attempts,88);assert.equal(await page.locator('#run-journey-canvas .je-node').count(),8);
     await page.locator('#run-journey-canvas .je-outline-step').filter({hasText:'First visit?'}).click();

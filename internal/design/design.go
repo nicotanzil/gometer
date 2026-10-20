@@ -7,7 +7,12 @@ import (
 	"strings"
 )
 
-// Files contains only bundled fonts, licenses, and presentation styles.
+// LogoSVG is the trusted, bundled Open Scope mark for portable reports.
+//
+//go:embed assets/gometer-mark.svg
+var LogoSVG string
+
+// Files contains bundled fonts, licenses, brand assets, and presentation styles.
 //
 //go:embed assets/*
 var Files embed.FS

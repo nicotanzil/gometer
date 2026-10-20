@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"gmeter/internal/config"
-	"gmeter/internal/telemetry"
+	"gometer/internal/config"
+	"gometer/internal/telemetry"
 )
 
 func TestWorkloadTLSOptInAndIsolation(t *testing.T) {

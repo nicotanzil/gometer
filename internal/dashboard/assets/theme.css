@@ -53,8 +53,8 @@ label,.je-field{color:var(--text-2);font-weight:500}
 
 /* Keep the application's navigation and workbench, with the reference's quiet frame. */
 .sidebar{background:var(--nav);color:var(--text-2);border-right:1px solid var(--line)}
-.brand{font-family:var(--font-display);font-size:25px;font-weight:500;letter-spacing:-.045em;color:var(--ink)}
-.brand-mark{border:1px solid var(--line-2);border-radius:10px;background:var(--signal-soft);color:var(--signal);font-weight:400}
+.brand{font-family:var(--font-display);font-size:22px;font-weight:600;letter-spacing:-.045em;color:var(--ink);padding-inline:0;gap:8px}
+.brand-mark{width:24px;height:24px;min-width:24px;flex:0 0 24px;border:0;border-radius:0;background:currentColor;color:var(--signal);-webkit-mask:url("/gometer-mark.svg") center/contain no-repeat;mask:url("/gometer-mark.svg") center/contain no-repeat}
 .version{background:var(--surface-3);border:1px solid var(--line);color:var(--muted);font-family:var(--font-mono)}
 .nav{color:var(--text-2);font-weight:400;border:1px solid transparent;border-radius:999px;transition:background .3s var(--ease),color .3s var(--ease),border-color .3s var(--ease)}
 .nav:hover{background:var(--signal-soft);color:var(--ink)}

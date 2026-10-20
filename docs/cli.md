@@ -2,7 +2,7 @@
 
 [Documentation](README.md) · [Project overview](../README.md)
 
-Run commands from the source checkout with `./bin/gmeter`, or use the installed
+Run commands from the source checkout with `./bin/gometer`, or use the installed
 binary's path. Flags use Go's command-line parser; specify booleans as
 `-diagnostics=false`, rather than `-diagnostics false`. Options are placed after
 the command and before any positional arguments; these commands accept no
@@ -12,12 +12,12 @@ positional arguments.
 
 | Command | Purpose |
 | --- | --- |
-| `gmeter help` | Show command overview |
-| `gmeter version` | Print the binary's version |
-| `gmeter validate -config path.json` | Parse and validate one configuration without network requests |
-| `gmeter run [flags]` | Validate, execute a workload, and write configured reports |
-| `gmeter ui [flags]` | Start the dashboard; loopback by default |
-| `gmeter worker [flags]` | Start an authenticated rate-mode worker |
+| `gometer help` | Show command overview |
+| `gometer version` | Print the binary's version |
+| `gometer validate -config path.json` | Parse and validate one configuration without network requests |
+| `gometer run [flags]` | Validate, execute a workload, and write configured reports |
+| `gometer ui [flags]` | Start the dashboard; loopback by default |
+| `gometer worker [flags]` | Start an authenticated rate-mode worker |
 
 Each command accepts `-help`. Build with `make build` or the Go commands in
 [getting started](getting-started.md).
@@ -84,9 +84,9 @@ precedence over an unspecified flag.
 | `-journey-p95` | disabled | Maximum whole-journey p95; requires scenarios |
 | `-diagnostics` | `true` | Generator resources and HTTP transport timing |
 | `-workers` | empty | Comma-separated worker origins; rate mode only |
-| `-worker-ca` | `GMETER_WORKER_CA` or system roots | Additional PEM CA for worker HTTPS |
+| `-worker-ca` | `GOMETER_WORKER_CA` or system roots | Additional PEM CA for worker HTTPS |
 | `-telemetry` | `true` | Collect telemetry if configured; false disables it |
-| `-telemetry-ca` | `GMETER_TELEMETRY_CA` or system roots | Additional PEM CA for exporter HTTPS |
+| `-telemetry-ca` | `GOMETER_TELEMETRY_CA` or system roots | Additional PEM CA for exporter HTTPS |
 | `-quiet` | `false` | Disable progress messages; final summary still prints |
 | `-out` | timestamped path under `results/` | JSON result path; `''` disables it |
 | `-html` | timestamped path under `results/` | Standalone HTML path; `''` disables it |
@@ -102,7 +102,7 @@ or an importable dashboard run bundle.
 | --- | --- | --- | --- |
 | `ui` | `-listen` | `127.0.0.1:8790` | Explicit IP and port; non-loopback requires `-public-origin` |
 | `ui` | `-public-origin` | empty | Exact HTTPS origin for a trusted private ingress; no path prefixes |
-| `ui` | `-data` | `.gmeter` | Saved scenarios and history directory |
+| `ui` | `-data` | `.gometer` | Saved scenarios and history directory |
 | `worker` | `-listen` | `127.0.0.1:8801` | Explicit listen IP and port; non-loopback requires TLS |
 | `worker` | `-name` | hostname, or `worker` | Worker display name |
 | `worker` | `-tls-cert` | empty | PEM worker server certificate |
@@ -115,10 +115,10 @@ or active job at a time. See [dashboard](dashboard.md) and [workers](workers.md)
 
 | Variable | Read by | Purpose |
 | --- | --- | --- |
-| `GMETER_WORKER_TOKEN` | Worker, CLI coordinator, dashboard | Shared worker-control token; 32–512 printable ASCII characters without whitespace |
-| `GMETER_WORKER_CA` | CLI coordinator, dashboard | Additional PEM CA file for worker HTTPS |
-| `GMETER_TELEMETRY_TOKEN` | CLI, dashboard | Exporter bearer token when `bearer_auth` is enabled |
-| `GMETER_TELEMETRY_CA` | CLI, dashboard | Additional PEM CA file for exporter HTTPS |
+| `GOMETER_WORKER_TOKEN` | Worker, CLI coordinator, dashboard | Shared worker-control token; 32–512 printable ASCII characters without whitespace |
+| `GOMETER_WORKER_CA` | CLI coordinator, dashboard | Additional PEM CA file for worker HTTPS |
+| `GOMETER_TELEMETRY_TOKEN` | CLI, dashboard | Exporter bearer token when `bearer_auth` is enabled |
+| `GOMETER_TELEMETRY_CA` | CLI, dashboard | Additional PEM CA file for exporter HTTPS |
 | `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` | Workload transport | Go's standard proxy environment behavior |
 
 The dashboard captures credential/CA environment settings when it starts.
@@ -148,15 +148,15 @@ binary, and retain the output even on a failed check. This POSIX shell example
 uses the local demo, which must already be running:
 
 ```sh
-./bin/gmeter validate -config examples/smoke.json || exit $?
+./bin/gometer validate -config examples/smoke.json || exit $?
 
-gmeter_exit=0
-./bin/gmeter run -config examples/smoke.json -quiet \
-  -out results/ci.json -html results/ci.html || gmeter_exit=$?
+gometer_exit=0
+./bin/gometer run -config examples/smoke.json -quiet \
+  -out results/ci.json -html results/ci.html || gometer_exit=$?
 
 # Configure your CI runner to retain results/ even when this step fails.
-printf 'gmeter exit code: %s\n' "$gmeter_exit"
-exit "$gmeter_exit"
+printf 'gometer exit code: %s\n' "$gometer_exit"
+exit "$gometer_exit"
 ```
 
 Run validation as a required step that stops on failure; CI runners differ in
@@ -169,7 +169,7 @@ release acceptance gates.
 For a finite run with 10 users making five attempts each:
 
 ```sh
-./bin/gmeter run -url http://127.0.0.1:8787/work -vus 10 -iterations 5
+./bin/gometer run -url http://127.0.0.1:8787/work -vus 10 -iterations 5
 ```
 
 Add `-duration 1m` to stop at either limit. One iteration means one request or,
@@ -179,7 +179,7 @@ iteration. The summary and artifacts report the stop reason.
 Stagger four users across a four-second ramp after waiting two seconds:
 
 ```sh
-./bin/gmeter run -url http://127.0.0.1:8787/work -vus 4 -iterations 3 \
+./bin/gometer run -url http://127.0.0.1:8787/work -vus 4 -iterations 3 \
   -startup-delay 2s -ramp-up 4s
 ```
 
@@ -187,3 +187,11 @@ Starts are planned at 2, 3, 4, and 5 seconds from run start. Add `-duration 10s`
 to cap admission at 10 seconds after the startup wait. Explicit `0s` overrides
 disable configured ramps or startup delays. The load-rate denominator excludes
 startup waiting; full elapsed time includes startup, load, drain, and collection.
+
+## Workspace and settings
+
+The application is **GoMeter**; executables are `gometer` and `gometer-demo`.
+Dashboard workspaces default to `.gometer/`. `-data` selects a different path.
+Worker and telemetry configuration uses the `GOMETER_*` variables listed above.
+Browser preferences, authentication headers and cookies, demo session cookies,
+and demo telemetry metrics use the `gometer` name.

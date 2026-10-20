@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"gmeter/internal/telemetry"
+	"gometer/internal/telemetry"
 )
 
 const MaxConfigBytes = 1 << 20

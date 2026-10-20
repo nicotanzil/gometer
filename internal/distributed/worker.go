@@ -18,10 +18,10 @@ import (
 	"time"
 	"unicode"
 
-	"gmeter/internal/config"
-	"gmeter/internal/diagnostics"
-	"gmeter/internal/engine"
-	"gmeter/internal/metrics"
+	"gometer/internal/config"
+	"gometer/internal/diagnostics"
+	"gometer/internal/engine"
+	"gometer/internal/metrics"
 )
 
 const Protocol = 1
@@ -85,11 +85,11 @@ type Worker struct {
 
 func ValidToken(token string) error {
 	if len(token) < 32 || len(token) > 512 {
-		return fmt.Errorf("GMETER_WORKER_TOKEN must contain 32–512 printable ASCII characters")
+		return fmt.Errorf("GOMETER_WORKER_TOKEN must contain 32–512 printable ASCII characters")
 	}
 	for _, b := range []byte(token) {
 		if b < 33 || b > 126 {
-			return fmt.Errorf("GMETER_WORKER_TOKEN must contain 32–512 printable ASCII characters")
+			return fmt.Errorf("GOMETER_WORKER_TOKEN must contain 32–512 printable ASCII characters")
 		}
 	}
 	return nil
@@ -359,7 +359,7 @@ func ServeWorker(ctx context.Context, address, name, token, cert, key string, ou
 	if cert != "" {
 		scheme = "https"
 	}
-	fmt.Fprintf(output, "gmeter worker %s: %s://%s\n", name, scheme, listener.Addr())
+	fmt.Fprintf(output, "GoMeter worker %s: %s://%s\n", name, scheme, listener.Addr())
 	done := make(chan error, 1)
 	go func() {
 		if cert != "" {

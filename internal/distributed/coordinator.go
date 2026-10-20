@@ -15,9 +15,9 @@ import (
 	"sync"
 	"time"
 
-	"gmeter/internal/config"
-	"gmeter/internal/engine"
-	"gmeter/internal/telemetry"
+	"gometer/internal/config"
+	"gometer/internal/engine"
+	"gometer/internal/telemetry"
 )
 
 type Options struct {

@@ -33,7 +33,7 @@ The diagram does not imply shared memory or a durable job queue.
 
 | Area | Responsibility |
 | --- | --- |
-| `cmd/gmeter/` | Signal-aware executable entry point |
+| `cmd/gometer/` | Signal-aware executable entry point |
 | `internal/cli/` | Commands, overrides, setup, reports, and exit codes |
 | `internal/config/` | Strict JSON input, defaults, validation, compiled plans |
 | `internal/correlation/` | Variable encoding and JSON Pointer lookup |
@@ -45,7 +45,7 @@ The diagram does not imply shared memory or a durable job queue.
 | `internal/report/` | Portable result JSON and self-contained HTML |
 | `internal/dashboard/` | Embedded app, local HTTP API, saved scenarios, runs, imports, and comparisons |
 | `examples/` | Shared CLI examples and embedded dashboard starters |
-| `cmd/gmeter-demo/` | Bounded-capacity HTTP target, journey endpoints, and telemetry exporter |
+| `cmd/gometer-demo/` | Bounded-capacity HTTP target, journey endpoints, and telemetry exporter |
 
 ## Measurement and collection boundaries
 

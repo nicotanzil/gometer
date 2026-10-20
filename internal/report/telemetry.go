@@ -3,7 +3,7 @@ package report
 import (
 	"encoding/json"
 	"fmt"
-	"gmeter/internal/telemetry"
+	"gometer/internal/telemetry"
 )
 
 func telemetryValue(value *float64, unit string) string {

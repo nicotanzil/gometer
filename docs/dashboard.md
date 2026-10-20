@@ -4,23 +4,23 @@
 
 ```sh
 make build
-./bin/gmeter ui
+./bin/gometer ui
 ```
 
 Open the printed URL, normally **http://127.0.0.1:8790**. The binary includes the
 app and seven starter configurations. Node and external assets are not needed.
-Start `./bin/gmeter-demo` separately to use examples on port 8787.
+Start `./bin/gometer-demo` separately to use examples on port 8787.
 
 ```sh
-./bin/gmeter ui -listen 127.0.0.1:8791 -data /path/to/workspace
-./bin/gmeter ui -listen '[::1]:8790'
+./bin/gometer ui -listen 127.0.0.1:8791 -data /path/to/workspace
+./bin/gometer ui -listen '[::1]:8790'
 ```
 
 The listen address must be an explicit IP and port. Loopback is the default;
 port `0` selects an available port. A non-loopback listener requires
 `-public-origin https://host` and must sit behind a private TLS ingress that
 enforces VPN access or authentication and an allowlist. The default data
-directory is `.gmeter/` in the current directory. See [private ingress access](operations.md#private-ingress-access).
+directory is `.gometer/` in the current directory. See [private ingress access](operations.md#private-ingress-access).
 
 ## App overview
 
@@ -154,7 +154,7 @@ Configuration imports have the same 1 MiB limit as the CLI.
 
 **Workers** accepts origins on separate lines. An empty field executes locally;
 worker pools support fixed arrival rates and use the configured rate/concurrency
-as fleet totals. The dashboard must inherit `GMETER_WORKER_TOKEN` at startup.
+as fleet totals. The dashboard must inherit `GOMETER_WORKER_TOKEN` at startup.
 Remote origins require HTTPS. See [workers.md](workers.md) for worker setup,
 clock estimation, fixed quotas, leases, and incomplete measurements.
 
@@ -163,7 +163,7 @@ timeout, selected scalar series, and optional environment bearer authentication.
 Leave the endpoint blank to disable it. Invalid selected-metrics JSON blocks
 validation, saving, and starting until corrected. The new server telemetry
 starter uses the rebuilt demo's `/metrics` endpoint. The dashboard reads
-`GMETER_TELEMETRY_TOKEN` and optional `GMETER_TELEMETRY_CA` at startup; their
+`GOMETER_TELEMETRY_TOKEN` and optional `GOMETER_TELEMETRY_CA` at startup; their
 values do not enter browser payloads or exports. See [telemetry.md](telemetry.md).
 
 **Save scenario** creates a library entry. After loading it, **Update scenario**

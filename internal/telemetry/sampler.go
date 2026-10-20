@@ -82,11 +82,11 @@ func New(c Config, opts Options) (*Sampler, error) {
 	}
 	if p.BearerAuth {
 		if len(opts.Token) < 1 || len(opts.Token) > 4096 {
-			return nil, fmt.Errorf("GMETER_TELEMETRY_TOKEN is required for bearer telemetry (1–4096 ASCII characters without whitespace)")
+			return nil, fmt.Errorf("GOMETER_TELEMETRY_TOKEN is required for bearer telemetry (1–4096 ASCII characters without whitespace)")
 		}
 		for _, b := range []byte(opts.Token) {
 			if b < 33 || b > 126 {
-				return nil, fmt.Errorf("GMETER_TELEMETRY_TOKEN must contain ASCII characters without whitespace")
+				return nil, fmt.Errorf("GOMETER_TELEMETRY_TOKEN must contain ASCII characters without whitespace")
 			}
 		}
 	}
@@ -235,7 +235,7 @@ func (s *Sampler) fetch(ctx context.Context) ([]Value, error) {
 	}
 	r.Header.Set("Accept", "text/plain;version=0.0.4")
 	r.Header.Set("Accept-Encoding", "identity")
-	r.Header.Set("User-Agent", "gmeter/0.5.0 telemetry")
+	r.Header.Set("User-Agent", "GoMeter/0.6.0 telemetry")
 	if s.plan.BearerAuth {
 		r.Header.Set("Authorization", "Bearer "+s.token)
 	}

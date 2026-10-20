@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"gmeter/internal/cli"
+	"gometer/internal/cli"
 )
 
 func main() {

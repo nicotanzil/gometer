@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"gmeter/internal/engine"
+	"gometer/internal/engine"
 	"net/http"
 	"net/http/httptest"
 	"os"

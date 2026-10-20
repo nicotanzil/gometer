@@ -4,7 +4,7 @@
 
 The target is to cover the capabilities of **bundled Apache JMeter 5.6.3**, then
 add useful capabilities beyond that baseline. This is an accepted product goal,
-not the current state: gmeter remains an HTTP load-testing application. The
+not the current state: GoMeter remains an HTTP load-testing application. The
 [official download](https://jmeter.apache.org/download_jmeter.cgi) and manual
 were checked on 8 October 2026. No third-party plugin baseline is included yet.
 
@@ -24,7 +24,7 @@ better throughput, accuracy, resource use, or target health.
 
 ## Current comparison
 
-| Area | gmeter today | Work needed for JMeter coverage |
+| Area | GoMeter today | Work needed for JMeter coverage |
 | --- | --- | --- |
 | HTTP testing | Requests, journeys with nested branches and bounded loops, cookies, raw payloads, variable templates, header/scalar JSON extraction, basic assertions; verified or explicitly insecure HTTPS | Redirect chains, richer authentication, uploads, connection policies, additional selectors and assertions, client certificates |
 | Workloads | Fixed users with duration and/or finite per-user iterations, user ramps/startup delay, all five users-mode failure actions, constant/jittered arrivals, rate phases, weighted journeys, fixed-count/while loops, if/else, bounded admission and explicit drops | Independent user groups, foreach/once-only/switch, compound conditions, synchronization, setup/teardown, additional timer distributions |
@@ -134,18 +134,18 @@ are reference points for execution and integration tests.
 - [ ] Reproducible JMeter comparison harness: matched payloads, connections, TLS,
   reporting, hardware, load shape and independently observed target counts.
 
-Already useful gmeter capabilities include explicit scheduler/capacity misses,
+Already useful GoMeter capabilities include explicit scheduler/capacity misses,
 fleet-wide rate partitioning, bounded aggregates, local portable run history,
 and independent target metric coverage. These are implementation facts, not
 claims that JMeter or its plugin ecosystem cannot provide related functionality.
 
 ## Completion definition
 
-“JMeter is a subset of gmeter” may be claimed only after every in-scope bundled
+“JMeter is a subset of GoMeter” may be claimed only after every in-scope bundled
 component and relevant configuration behavior has a tested native equivalent or
 a supported compatibility path. Equivalent workflow outcomes must include CLI,
 UI authoring, persistence, reports and distributed execution where applicable.
 Named differences, unsupported settings, deprecated components and Java behavior
 cannot be hidden behind an “Available” family label. Record the exact JMeter
 release and adapter versions. Expand scope explicitly for third-party plugins.
-Until those gates pass, describe gmeter as pursuing parity.
+Until those gates pass, describe GoMeter as pursuing parity.

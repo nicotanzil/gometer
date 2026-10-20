@@ -10,31 +10,31 @@ import (
 	"strings"
 	"time"
 
-	"gmeter/internal/config"
-	"gmeter/internal/dashboard"
-	"gmeter/internal/distributed"
-	"gmeter/internal/engine"
-	"gmeter/internal/report"
-	"gmeter/internal/telemetry"
+	"gometer/internal/config"
+	"gometer/internal/dashboard"
+	"gometer/internal/distributed"
+	"gometer/internal/engine"
+	"gometer/internal/report"
+	"gometer/internal/telemetry"
 )
 
-var Version = "0.5.0-dev"
+var Version = "0.6.0-dev"
 
-const help = `gmeter — HTTP load and stress testing
+const help = `GoMeter — HTTP load and stress testing
 
 Usage:
-  gmeter run -url http://localhost:8787/work -vus 10 -duration 10s
-  gmeter run -url http://localhost:8787/work -rate 100 -duration 10s
-  gmeter run -config examples/stress.json
-  gmeter run -config examples/journey.json
-  gmeter validate -config examples/stress.json
-  gmeter ui -listen 127.0.0.1:8790
-  gmeter ui -listen 0.0.0.0:8790 -public-origin https://gmeter.example.com
-  gmeter worker -listen 127.0.0.1:8801 -name worker-1
-  gmeter run -config examples/smoke.json -workers http://127.0.0.1:8801,http://127.0.0.1:8802
-  gmeter version
+  gometer run -url http://localhost:8787/work -vus 10 -duration 10s
+  gometer run -url http://localhost:8787/work -rate 100 -duration 10s
+  gometer run -config examples/stress.json
+  gometer run -config examples/journey.json
+  gometer validate -config examples/stress.json
+  gometer ui -listen 127.0.0.1:8790
+  gometer ui -listen 0.0.0.0:8790 -public-origin https://gometer.example.com
+  gometer worker -listen 127.0.0.1:8801 -name worker-1
+  gometer run -config examples/smoke.json -workers http://127.0.0.1:8801,http://127.0.0.1:8802
+  gometer version
 
-Run flags override configuration fields. Run 'gmeter run -help' for flags.
+Run flags override configuration fields. Run 'gometer run -help' for flags.
 Results are saved as JSON and standalone HTML under results/ by default.
 Exit codes: 0 passed, 1 checks failed, 2 input/output error, 130 interrupted.
 `
@@ -49,7 +49,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		fmt.Fprint(stdout, help)
 		return 0
 	case "version":
-		fmt.Fprintln(stdout, "gmeter", Version)
+		fmt.Fprintln(stdout, "GoMeter", Version)
 		return 0
 	case "validate":
 		return validate(args[1:], stdout, stderr)
@@ -83,10 +83,10 @@ func worker(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 	if fs.NArg() != 0 {
-		fmt.Fprintln(stderr, "usage: gmeter worker [-listen IP:port] [-name worker] [-tls-cert cert.pem -tls-key key.pem]")
+		fmt.Fprintln(stderr, "usage: gometer worker [-listen IP:port] [-name worker] [-tls-cert cert.pem -tls-key key.pem]")
 		return 2
 	}
-	if err := distributed.ServeWorker(ctx, *listen, *name, os.Getenv("GMETER_WORKER_TOKEN"), *cert, *key, stdout); err != nil {
+	if err := distributed.ServeWorker(ctx, *listen, *name, os.Getenv("GOMETER_WORKER_TOKEN"), *cert, *key, stdout); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
@@ -98,7 +98,7 @@ func ui(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	listen := fs.String("listen", "127.0.0.1:8790", "dashboard listen IP and port; non-loopback requires -public-origin")
 	publicOrigin := fs.String("public-origin", "", "exact HTTPS origin used by a trusted private ingress")
-	data := fs.String("data", ".gmeter", "directory for saved scenarios and runs")
+	data := fs.String("data", ".gometer", "directory for saved scenarios and runs")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return 0
@@ -106,7 +106,7 @@ func ui(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 	if fs.NArg() != 0 || *data == "" {
-		fmt.Fprintln(stderr, "usage: gmeter ui [-listen 127.0.0.1:8790] [-public-origin https://host] [-data .gmeter]")
+		fmt.Fprintln(stderr, "usage: gometer ui [-listen 127.0.0.1:8790] [-public-origin https://host] [-data .gometer]")
 		return 2
 	}
 	path, err := filepath.Abs(*data)
@@ -145,7 +145,7 @@ func validate(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 	if *path == "" || fs.NArg() != 0 {
-		fmt.Fprintln(stderr, "usage: gmeter validate -config scenario.json")
+		fmt.Fprintln(stderr, "usage: gometer validate -config scenario.json")
 		return 2
 	}
 	c, err := load(*path)
@@ -205,10 +205,10 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	htmlPath := fs.String("html", base+".html", "HTML report path; empty disables HTML output")
 	quiet := fs.Bool("quiet", false, "disable progress output")
 	diagnostics := fs.Bool("diagnostics", true, "record generator resources and detailed HTTP timing")
-	workers := fs.String("workers", "", "comma-separated worker origins; rate mode only; authentication uses GMETER_WORKER_TOKEN")
-	workerCA := fs.String("worker-ca", os.Getenv("GMETER_WORKER_CA"), "optional PEM CA file for worker HTTPS certificates")
+	workers := fs.String("workers", "", "comma-separated worker origins; rate mode only; authentication uses GOMETER_WORKER_TOKEN")
+	workerCA := fs.String("worker-ca", os.Getenv("GOMETER_WORKER_CA"), "optional PEM CA file for worker HTTPS certificates")
 	targetTelemetry := fs.Bool("telemetry", true, "collect configured target-server metrics; false disables telemetry")
-	telemetryCA := fs.String("telemetry-ca", os.Getenv("GMETER_TELEMETRY_CA"), "optional PEM CA file for telemetry HTTPS certificates")
+	telemetryCA := fs.String("telemetry-ca", os.Getenv("GOMETER_TELEMETRY_CA"), "optional PEM CA file for telemetry HTTPS certificates")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return 0
@@ -349,11 +349,11 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if p.IsJourney() {
 		unit = "journeys"
 	}
-	fmt.Fprintf(stderr, "gmeter %s · %s mode · %s · concurrency %d %s · %s arrivals\n%s\n", Version, c.Mode, loadDescription(p), limit, unit, p.ArrivalDistribution, c.URL)
+	fmt.Fprintf(stderr, "GoMeter %s · %s mode · %s · concurrency %d %s · %s arrivals\n%s\n", Version, c.Mode, loadDescription(p), limit, unit, p.ArrivalDistribution, c.URL)
 	if c.Insecure {
 		fmt.Fprintln(stderr, "TLS verification disabled for workload HTTPS requests. Worker and telemetry TLS verification remains enabled.")
 	}
-	opts := engine.Options{Telemetry: telemetry.Options{Token: os.Getenv("GMETER_TELEMETRY_TOKEN"), CAFile: *telemetryCA}}
+	opts := engine.Options{Telemetry: telemetry.Options{Token: os.Getenv("GOMETER_TELEMETRY_TOKEN"), CAFile: *telemetryCA}}
 	if !*quiet {
 		opts.OnProgress = func(progress engine.Progress) {
 			if progress.Workload == "journeys" {
@@ -366,7 +366,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	var result engine.Result
 	if len(c.Workers) > 0 {
 		fmt.Fprintf(stderr, "Coordinating %d workers; the configured rate and concurrency are fleet totals.\n", len(c.Workers))
-		result, err = distributed.Run(ctx, c, distributed.Options{Token: os.Getenv("GMETER_WORKER_TOKEN"), CAFile: *workerCA, OnProgress: opts.OnProgress, Telemetry: opts.Telemetry})
+		result, err = distributed.Run(ctx, c, distributed.Options{Token: os.Getenv("GOMETER_WORKER_TOKEN"), CAFile: *workerCA, OnProgress: opts.OnProgress, Telemetry: opts.Telemetry})
 	} else {
 		result, err = engine.Run(ctx, c, opts)
 	}

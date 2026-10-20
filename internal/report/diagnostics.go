@@ -1,6 +1,6 @@
 package report
 
-import "gmeter/internal/metrics"
+import "gometer/internal/metrics"
 
 type timingRow struct {
 	Name string
@@ -26,7 +26,7 @@ const diagnosticsHTML = `{{define "diagnostics"}}
 <div class="stat"><strong>{{f .Generator.Final.GCPauseMS}} ms</strong><span>Cumulative GC pause time during window</span></div>
 <div class="stat"><strong>{{f .Arrivals.StartDelay.P95MS}} ms</strong><span>Workload arrival start delay · p95</span></div>
 </div><div class="details"><span>{{.Generator.Platform}}</span><span>{{.Generator.GoVersion}}</span><span>{{.Generator.LogicalCPUs}} logical CPUs · GOMAXPROCS {{.Generator.Final.GOMAXPROCS}}</span><span>{{.Generator.Samples}} resource samples</span></div>
-<p class="small">Process CPU includes other work in this gmeter process, such as dashboard requests. Resources are sampled at start, about once per second, and after drain. Sampled peaks can miss short spikes. Go heap and runtime memory are not resident-memory measurements; resident peak includes earlier runs in this process. These metrics do not prove generator saturation or target-server health.</p></section>{{end}}
+<p class="small">Process CPU includes other work in this GoMeter process, such as dashboard requests. Resources are sampled at start, about once per second, and after drain. Sampled peaks can miss short spikes. Go heap and runtime memory are not resident-memory measurements; resident peak includes earlier runs in this process. These metrics do not prove generator saturation or target-server health.</p></section>{{end}}
 {{if .HTTP}}<section class="panel" style="margin-top:22px"><h2>HTTP timing and connections</h2><div class="scroll"><table><thead><tr><th>Observed interval</th><th>Samples</th><th>Mean</th><th>P50</th><th>P95</th><th>Max</th></tr></thead><tbody>
 {{range timingRows .HTTP}}<tr><td>{{.Name}}</td><td>{{n .Samples}}</td><td>{{if .Samples}}{{f .MeanMS}} ms{{else}}—{{end}}</td><td>{{if .Samples}}{{f .P50MS}} ms{{else}}—{{end}}</td><td>{{if .Samples}}{{f .P95MS}} ms{{else}}—{{end}}</td><td>{{if .Samples}}{{f .MaxMS}} ms{{else}}—{{end}}</td></tr>{{end}}
 </tbody></table></div><div class="details"><span>{{n .HTTP.ConnectionRequests}} acquisition requests</span><span>{{n .HTTP.ConnectionsAcquired}} acquired · {{n .HTTP.ReusedConnections}} reused · {{n .HTTP.IdleReuses}} idle reuses</span><span>{{n .HTTP.DialAttempts}} TCP dials · {{n .HTTP.DialFailures}} failed</span><span>{{n .HTTP.DNSLookups}} DNS lookups · {{n .HTTP.DNSFailures}} failed</span><span>{{n .HTTP.TLSHandshakes}} TLS handshakes · {{n .HTTP.TLSFailures}} failed</span><span>{{n .HTTP.WriteCompletions}} write completions · {{n .HTTP.WriteFailures}} failed</span><span>{{n .HTTP.BodyReadFailures}} body read failures</span><span>{{n .HTTP.UnfinishedEvents}} unfinished or unmatched pending events</span>{{range $protocol,$count := .HTTP.Protocols}}<span>{{$protocol}}: {{n $count}} response headers</span>{{end}}</div>

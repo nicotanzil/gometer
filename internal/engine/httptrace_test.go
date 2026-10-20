@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"gmeter/internal/config"
-	"gmeter/internal/metrics"
+	"gometer/internal/config"
+	"gometer/internal/metrics"
 )
 
 func tracedGet(t *testing.T, client *http.Client, url string, c *metrics.Collector) {

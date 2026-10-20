@@ -4,7 +4,7 @@
 
 **Build → Import JMeter JMX** opens a guided review of an existing `.jmx` file.
 This first converter targets JMeter **5.6.3**, XML format **1.2**, and a limited
-set of HTTP plans. It converts eligible plans into native gmeter journeys. It
+set of HTTP plans. It converts eligible plans into native GoMeter journeys. It
 does not run JMeter or provide full JMX compatibility or round-trip export.
 
 ![JMX compatibility review, runtime policies, and editable property inputs](images/jmx-import.jpg)
@@ -16,7 +16,7 @@ does not run JMeter or provide full JMX compatibility or round-trip export.
    reading a local file. Its target is the local demo on port 8787.
 2. **Review compatibility.** Select a component to inspect its source path and
    mapping. Supply any required `__P` property values and press **Apply values**.
-   Review and accept the gmeter runtime policies. Acceptance does not remove
+   Review and accept the GoMeter runtime policies. Acceptance does not remove
    component blockers.
 3. **Preview journey.** Eligible plans show the mapped flow canvas. Select nodes
    to inspect requests and loops. A blocked plan shows its source hierarchy,
@@ -28,7 +28,7 @@ does not run JMeter or provide full JMX compatibility or round-trip export.
 Importing, reviewing, previewing, and saving send **no workload requests**.
 They do not replace your builder draft. **Open in journey builder** explicitly
 loads the saved scenario; **Start run** is a separate action that sends traffic.
-Start the bundled demo with `./bin/gmeter-demo` before running the sample.
+Start the bundled demo with `./bin/gometer-demo` before running the sample.
 
 ## What this converter accepts
 
@@ -44,14 +44,14 @@ Start the bundled demo with `./bin/gmeter-demo` before running the sample.
 | Response Assertion | One literal body **Substring** pattern, or one literal response-code **Equals** pattern; parent scope only; non-2xx code assertions require Ignore Status |
 | Cookie Manager | Optional standard policy covering the whole group; no preloaded cookies, resets, or custom implementation. Without one, imported journeys explicitly disable cookies |
 | Disabled components | Disabled subtrees do not execute; their XML remains in the retained original source |
-| Result listeners | Visible notice: gmeter reports replace JMeter listeners; no JTL or configured listener file is written |
+| Result listeners | Visible notice: GoMeter reports replace JMeter listeners; no JTL or configured listener file is written |
 
 Unknown enabled components, properties, incompatible XML property types, and
 unsupported scopes block conversion. Among the current blockers are unbounded
 thread groups, multiple groups, delayed thread creation, unknown failure actions,
 CSV files, extractors, timers, If/While controllers, scripts, plugins, redirects,
 uploads, form encoding, custom HTTP timeouts, authentication managers, proxies,
-and cross-origin flows. Native gmeter supports some related features, including
+and cross-origin flows. Native GoMeter supports some related features, including
 branches, while loops and extraction; that does not imply a reviewed JMX mapping.
 
 The bounds above are validation limits, not demonstrated generator capacity.
@@ -59,18 +59,18 @@ The component/property allowlist and tests live in `internal/jmx`.
 
 ## Runtime policies you must review
 
-Converted plans use gmeter's 5-second **total** request timeout, 30-second
+Converted plans use GoMeter's 5-second **total** request timeout, 30-second
 whole-journey deadline, 10 MiB response limit, bounded loops, and aggregated
 measurements. Admitted journeys drain after the load window. Finite Thread Group
 loops map to native per-user `iterations`, independently of any inner Loop
 Controller. Without a scheduler, finite plans have no implicit duration limit.
 With a scheduler, the first count/time limit closes admission. JMeter checks its
-duration between samplers; gmeter drains the admitted journey instead. See the
+duration between samplers; GoMeter drains the admitted journey instead. See the
 [Apache Thread Group reference](https://jmeter.apache.org/usermanual/component_reference.html#Thread_Group)
 and [5.6.3 loop implementation](https://github.com/apache/jmeter/blob/rel/v5.6.3/src/core/src/main/java/org/apache/jmeter/control/LoopController.java). HTTPS certificates
 are verified. JMeter connection implementations, default headers, cookie edge
 cases, timing statistics, and listener output can differ. This is an explicit
-conversion to gmeter behavior, not a JMeter runtime emulator.
+conversion to GoMeter behavior, not a JMeter runtime emulator.
 
 Explicit source settings without a supported mapping remain blockers even when
 you accept these policies. After conversion, you may edit the native scenario
@@ -90,7 +90,7 @@ conversion, which may differ from subsequent builder edits. Native configuration
 JSON exports contain the converted configuration, not this source provenance.
 
 Records live in `<workspace>/migrations/` and `<workspace>/scenarios/`, under the
-directory selected by `gmeter ui -data` (default `.gmeter`). Files are written
+directory selected by `gometer ui -data` (default `.gometer`). Files are written
 atomically with owner-only permissions. Workspace data is **not encrypted at
 rest**. XML, bodies, headers, properties, and backups may contain credentials;
 protect and retain them as carefully as native test configurations.
@@ -133,7 +133,7 @@ rounded interval is zero, starts are simultaneous. A rounded native ramp over
 Source references: [Thread Group schedule and rounding](https://github.com/apache/jmeter/blob/rel/v5.6.3/src/core/src/main/java/org/apache/jmeter/threads/ThreadGroup.java)
 and [startup before ramp delay](https://github.com/apache/jmeter/blob/rel/v5.6.3/src/core/src/main/java/org/apache/jmeter/threads/JMeterThread.java).
 JMeter's **Delay Thread creation until needed** option uses a different adaptive
-ramp scheduler and remains blocked. gmeter creates user work at scheduled starts
+ramp scheduler and remains blocked. GoMeter creates user work at scheduled starts
 and uses one absolute group clock. JVM thread allocation, startup overhead,
 sampler-boundary stopping, and OS scheduling are not emulated. Review the runtime
 policies before converting; these mappings do not establish cross-engine timing
@@ -160,11 +160,11 @@ execution, and any user stopped on error fails a mandatory check. These are
 explicit conversion policies; cross-engine equivalence has not been established.
 
 The converter explicitly explains the test-wide stopping difference. JMeter
-stops gracefully at the end of current samplers; gmeter ends the failing journey
+stops gracefully at the end of current samplers; GoMeter ends the failing journey
 and drains other already-admitted journeys, including their later requests and
 pauses. This may send additional HTTP requests after the triggering failure.
 Accepting runtime policies accepts that native conversion contract. See the
 [5.6.3 stopping implementation](https://github.com/apache/jmeter/blob/rel/v5.6.3/src/core/src/main/java/org/apache/jmeter/threads/JMeterThread.java).
-Immediate stopping cancels gmeter workload contexts and retains partial results;
+Immediate stopping cancels GoMeter workload contexts and retains partial results;
 it cannot undo a server-side effect. Neither conversion has cross-engine timing
 or performance equivalence evidence.

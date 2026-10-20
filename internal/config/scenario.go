@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"gmeter/internal/correlation"
+	"gometer/internal/correlation"
 )
 
 type JourneyThresholds struct {
@@ -280,7 +280,7 @@ func (p Plan) compileStep(s Step, index int, known map[string]bool, base *url.UR
 	// expanded URL again at execution time. All steps stay on the base origin.
 	values := map[string]string{}
 	for k := range known {
-		values[k] = "gmeter"
+		values[k] = "gometer"
 	}
 	sample, err := sp.URLTemplate.Expand(values)
 	if err != nil {

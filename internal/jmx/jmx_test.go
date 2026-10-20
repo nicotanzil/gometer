@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"gmeter/internal/config"
-	"gmeter/internal/engine"
-	"gmeter/internal/jmx"
+	"gometer/internal/config"
+	"gometer/internal/engine"
+	"gometer/internal/jmx"
 )
 
 func source(t *testing.T) string {

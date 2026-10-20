@@ -11,8 +11,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"gmeter/examples"
-	"gmeter/internal/jmx"
+	"gometer/examples"
+	"gometer/internal/jmx"
 )
 
 func jmxSource(t *testing.T) string {

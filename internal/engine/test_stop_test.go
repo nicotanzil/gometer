@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 func TestTestWideStopsDrainOrCancelAdmittedJourneys(t *testing.T) {

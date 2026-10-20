@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 func TestShardsCoverFractionalPhasesAndGlobalJourneyIDs(t *testing.T) {

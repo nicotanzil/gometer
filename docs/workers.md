@@ -9,7 +9,7 @@ and sequential phases use the same engine. Users mode currently runs locally.
 ## Local setup
 
 Build with `make build`. Generate one token and securely provide the same value
-to each worker and coordinator through `GMETER_WORKER_TOKEN`. It must contain
+to each worker and coordinator through `GOMETER_WORKER_TOKEN`. It must contain
 32–512 ASCII characters without whitespace. You can generate a value once with
 `openssl rand -hex 32`; do not generate different tokens for each process.
 Worker-control tokens are never stored in configurations, reports, or exported
@@ -20,20 +20,20 @@ With that environment variable set in each terminal:
 
 ```sh
 # Terminal 1: target service
-./bin/gmeter-demo
+./bin/gometer-demo
 
 # Terminal 2: first worker
-./bin/gmeter worker -name worker-1 -listen 127.0.0.1:8801
+./bin/gometer worker -name worker-1 -listen 127.0.0.1:8801
 
 # Terminal 3: second worker
-./bin/gmeter worker -name worker-2 -listen 127.0.0.1:8802
+./bin/gometer worker -name worker-2 -listen 127.0.0.1:8802
 
 # Terminal 4: coordinator
-./bin/gmeter run -config examples/smoke.json \
+./bin/gometer run -config examples/smoke.json \
   -workers http://127.0.0.1:8801,http://127.0.0.1:8802
 
 # Or use the browser dashboard as the coordinator.
-./bin/gmeter ui
+./bin/gometer ui
 ```
 
 In the dashboard, enter worker origins in **Workers**, one per line, or load
@@ -69,15 +69,15 @@ require a TLS certificate and private key. Control always requires the token;
 browser-origin control requests are rejected.
 
 ```sh
-./bin/gmeter worker -name worker-1 -listen 0.0.0.0:8801 \
+./bin/gometer worker -name worker-1 -listen 0.0.0.0:8801 \
   -tls-cert /secure/worker.pem -tls-key /secure/worker-key.pem
 
-./bin/gmeter run -config scenario.json -workers https://worker.example:8801 \
+./bin/gometer run -config scenario.json -workers https://worker.example:8801 \
   -worker-ca /secure/worker-ca.pem
 ```
 
 Certificates must verify for the origin's hostname/IP. System certificate roots
-are the default; `-worker-ca` adds a PEM CA. `GMETER_WORKER_CA` sets the default
+are the default; `-worker-ca` adds a PEM CA. `GOMETER_WORKER_CA` sets the default
 for the CLI and dashboard. Certificate verification cannot be disabled. HTTP
 control is allowed only on literal loopback IPs. Authorization headers never
 follow redirects. Worker control connects directly; target requests retain their
@@ -93,7 +93,7 @@ worker has a stable per-pod DNS name. Enter each worker's HTTPS pod DNS name in
 the coordinator's Workers field. Do not point multiple worker entries at one
 load-balanced Service: the coordinator treats each origin as a distinct worker.
 Mount the shared control token and TLS keypair from Secrets, and mount the CA
-certificate in the dashboard pod for `GMETER_WORKER_CA`. Restrict worker ingress
+certificate in the dashboard pod for `GOMETER_WORKER_CA`. Restrict worker ingress
 to the dashboard and worker egress to the intended test targets.
 
 ## Shared schedule and capacity

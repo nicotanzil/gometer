@@ -7,8 +7,8 @@ request and journey results without changing their count equations, thresholds,
 or latency definitions.
 
 ```sh
-./bin/gmeter run -config examples/smoke.json
-./bin/gmeter run -config examples/smoke.json -diagnostics=false
+./bin/gometer run -config examples/smoke.json
+./bin/gometer run -config examples/smoke.json -diagnostics=false
 ```
 
 Set `"diagnostics": false` in a configuration to disable both resource sampling
@@ -27,7 +27,7 @@ HTTP timing/count populations. See [telemetry.md](telemetry.md).
 
 ## Generator process measurements
 
-The sampler reads the current gmeter process at run start, about once per second,
+The sampler reads the current GoMeter process at run start, about once per second,
 and after admitted work drains and optional final telemetry collection finishes. It also runs for quiet CLI tests. Setup before
 the initial sample and report writing after the final sample are excluded.
 

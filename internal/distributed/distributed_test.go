@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 const testToken = "test-worker-token-012345678901234567890123456789"

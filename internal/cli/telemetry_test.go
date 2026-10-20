@@ -13,15 +13,15 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"gmeter/internal/config"
-	"gmeter/internal/engine"
-	"gmeter/internal/telemetry"
+	"gometer/internal/config"
+	"gometer/internal/engine"
+	"gometer/internal/telemetry"
 )
 
 func TestCLITelemetryCredentialsAndDisableOverride(t *testing.T) {
 	const token = "cli-test-exporter-secret"
-	t.Setenv("GMETER_TELEMETRY_TOKEN", token)
-	t.Setenv("GMETER_TELEMETRY_CA", "")
+	t.Setenv("GOMETER_TELEMETRY_TOKEN", token)
+	t.Setenv("GOMETER_TELEMETRY_CA", "")
 	var load, scrapes atomic.Int64
 	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/metrics" {
@@ -79,7 +79,7 @@ func TestCLITelemetryCredentialsAndDisableOverride(t *testing.T) {
 		t.Fatal("HTML omits telemetry or exposes credentials", err)
 	}
 	beforeLoad, beforeScrapes := load.Load(), scrapes.Load()
-	t.Setenv("GMETER_TELEMETRY_TOKEN", "")
+	t.Setenv("GOMETER_TELEMETRY_TOKEN", "")
 	output.Reset()
 	if code := Run(context.Background(), []string{"validate", "-config", path}, &output, &output); code != 0 || load.Load() != beforeLoad || scrapes.Load() != beforeScrapes {
 		t.Fatal("structural validation needs credentials or sends traffic")

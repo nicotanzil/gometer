@@ -1,8 +1,11 @@
-# gmeter
+<h1><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="internal/design/assets/gometer-logo-dark.svg">
+  <img src="internal/design/assets/gometer-logo-light.svg" alt="GoMeter" width="323" height="80">
+</picture></h1>
 
 **HTTP load testing with visible offered demand.**
 
-Build tests in a local browser dashboard or run them from the CLI. gmeter measures
+Build tests in a local browser dashboard or run them from the CLI. GoMeter measures
 planned arrivals, delivered traffic, response errors, and missed demand separately,
 so a fast response time cannot hide load the generator never sent.
 
@@ -17,29 +20,29 @@ using it requires no Java, Node.js, or external frontend assets.
 From a source checkout, install **Go 1.24 or newer** and build both executables:
 
 ```sh
-go build -o bin/gmeter ./cmd/gmeter
-go build -o bin/gmeter-demo ./cmd/gmeter-demo
+go build -o bin/gometer ./cmd/gometer
+go build -o bin/gometer-demo ./cmd/gometer-demo
 ```
 
-On Windows, build with `bin/gmeter.exe` and `bin/gmeter-demo.exe` instead.
+On Windows, build with `bin/gometer.exe` and `bin/gometer-demo.exe` instead.
 If you have Make installed, `make build` builds both executables.
 
 Start the demo in one terminal:
 
 ```sh
-./bin/gmeter-demo
+./bin/gometer-demo
 ```
 
 Start the dashboard in another:
 
 ```sh
-./bin/gmeter ui
+./bin/gometer ui
 ```
 
-Open the URL printed by gmeter, normally **http://127.0.0.1:8790**, and choose
+Open the URL printed by GoMeter, normally **http://127.0.0.1:8790**, and choose
 **User guide → Your first test**. Loading its practice configuration and validating
 it send no workload traffic. **Start run** sends the requests. Saved scenarios and
-run history live in `.gmeter/` by default.
+run history live in `.gometer/` by default. Use `-data` to choose a different workspace.
 
 For a multi-step workflow, load **Authenticated checkout journeys** to open the
 **Journey canvas**. Edit requests and response checks, trace extracted variables,
@@ -69,8 +72,8 @@ See the [JMX import guide](docs/jmx-import.md) for the exact scope and runtime d
 Prefer the CLI? With the demo still running:
 
 ```sh
-./bin/gmeter validate -config examples/smoke.json
-./bin/gmeter run -config examples/smoke.json
+./bin/gometer validate -config examples/smoke.json
+./bin/gometer run -config examples/smoke.json
 ```
 
 The smoke example plans 40 arrivals over two seconds. A healthy default demo
@@ -84,12 +87,12 @@ Watch delivered traffic, latency, errors, and missed arrivals, then inspect the
 final acceptance checks. Generator diagnostics and optional server telemetry
 provide additional context.
 
-![gmeter walkthrough: validate a local test, watch live measurements, and review completed results](docs/images/walkthrough.gif)
+![GoMeter walkthrough: validate a local test, watch live measurements, and review completed results](docs/images/walkthrough.gif)
 
 <details>
 <summary>Completed run screenshot</summary>
 
-![gmeter completed local demo run showing measurements, checks, and traffic charts](docs/images/run-results.jpg)
+![GoMeter completed local demo run showing measurements, checks, and traffic charts](docs/images/run-results.jpg)
 
 </details>
 
@@ -99,12 +102,12 @@ provide additional context.
 Create a test with request settings, traffic phases, and explicit pass criteria.
 The preview explains what the configuration plans to send before you start it.
 
-![gmeter test builder with request, traffic, pass criteria, and planned demand](docs/images/test-builder.jpg)
+![GoMeter test builder with request, traffic, pass criteria, and planned demand](docs/images/test-builder.jpg)
 
 The in-app **User guide** explains a first local test, settings, results, and
 troubleshooting. Contextual help returns to the builder without replacing a draft.
 
-![gmeter user guide with first-test instructions and practice settings](docs/images/user-guide.jpg)
+![GoMeter user guide with first-test instructions and practice settings](docs/images/user-guide.jpg)
 
 </details>
 
@@ -153,7 +156,7 @@ capacity decisions or comparisons.
 Run the compiled binary in CI and retain its reports even when checks fail:
 
 ```sh
-./bin/gmeter run -config examples/smoke.json -quiet \
+./bin/gometer run -config examples/smoke.json -quiet \
   -out results/ci.json -html results/ci.html
 ```
 

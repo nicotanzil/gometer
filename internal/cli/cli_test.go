@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"gmeter/internal/distributed"
-	"gmeter/internal/engine"
+	"gometer/internal/distributed"
+	"gometer/internal/engine"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -33,7 +33,7 @@ func TestCLIProducesReportsAndUsesFailureExitCode(t *testing.T) {
 }
 
 func TestUIRequiresHTTPSOriginForRemoteListener(t *testing.T) {
-	for _, origin := range []string{"", "http://gmeter.example.test"} {
+	for _, origin := range []string{"", "http://gometer.example.test"} {
 		args := []string{"ui", "-listen", "0.0.0.0:8790"}
 		if origin != "" {
 			args = append(args, "-public-origin", origin)
@@ -140,7 +140,7 @@ func TestCLITestStopReports(t *testing.T) {
 
 func TestCLIDistributedReportsAndTokenHandling(t *testing.T) {
 	token := "cli-test-worker-token-012345678901234567890123456789"
-	t.Setenv("GMETER_WORKER_TOKEN", token)
+	t.Setenv("GOMETER_WORKER_TOKEN", token)
 	worker, err := distributed.NewWorker(context.Background(), "CLI worker", token)
 	if err != nil {
 		t.Fatal(err)
@@ -165,9 +165,9 @@ func TestCLIDistributedReportsAndTokenHandling(t *testing.T) {
 	if err := json.Unmarshal(data, &result); err != nil || result.SchemaVersion != 4 || !result.Distribution.Complete || result.Completed != 1 {
 		t.Fatalf("distributed report: %s %v", data, err)
 	}
-	t.Setenv("GMETER_WORKER_TOKEN", "")
+	t.Setenv("GOMETER_WORKER_TOKEN", "")
 	output.Reset()
-	if code := Run(context.Background(), []string{"worker", "-listen", "127.0.0.1:0"}, &output, &output); code != 2 || !strings.Contains(output.String(), "GMETER_WORKER_TOKEN") {
+	if code := Run(context.Background(), []string{"worker", "-listen", "127.0.0.1:0"}, &output, &output); code != 2 || !strings.Contains(output.String(), "GOMETER_WORKER_TOKEN") {
 		t.Fatal("worker started without required credentials")
 	}
 }

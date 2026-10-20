@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 // ValidateFlow checks the schema contract used by imported journey bundles.

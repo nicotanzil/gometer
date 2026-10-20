@@ -1,7 +1,7 @@
 /bin/
 /results/
 /work/
-/.gmeter/
+/.gometer/
 *.test
 coverage.out
 .DS_Store

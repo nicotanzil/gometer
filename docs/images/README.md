@@ -3,8 +3,8 @@
 [Documentation](../README.md) · [Project overview](../../README.md)
 
 These are real captures of the embedded app from the development checkout on
-15 October 2026. They show the current dark theme, locally bundled fonts, and
-existing app controls. The checkout includes pending feature work; these captures
+20 October 2026. They show the GoMeter Open Scope logo, current dark theme, locally bundled
+fonts, and existing app controls. The checkout includes pending feature work; these captures
 do not represent a tagged release.
 
 All executed workload traffic targets a separate instance of the bundled demo
@@ -15,13 +15,13 @@ No private targets, user data, or workload credentials appear in the assets.
 
 | Asset | State | Capture |
 | --- | --- | --- |
-| [walkthrough.gif](walkthrough.gif) | Configured builder → Validate → live run → completed checks and charts | 1440 × 960; 16.48 seconds; looping GIF, about 294 KiB |
+| [walkthrough.gif](walkthrough.gif) | Configured builder → Validate → live run → completed checks and charts | 1440 × 960; 16.73 seconds; looping GIF, about 285 KiB |
 | [test-builder.jpg](test-builder.jpg) | Validated Local API baseline and planned 160 arrivals | Full page, 1440 × 1676 |
-| [run-results.jpg](run-results.jpg) | Completed baseline, acceptance checks, and four workload charts | Document crop from the top, 1440 × 1301; later diagnostics omitted |
+| [run-results.jpg](run-results.jpg) | Completed baseline, acceptance checks, and four workload charts | Document crop from the top, 1440 × 1363; later diagnostics omitted |
 | [user-guide.jpg](user-guide.jpg) | First-test instructions and practice summary | Viewport, 1440 × 960 |
 | [journey-canvas.png](journey-canvas.png) | Authenticated checkout starter, selected Login, and extracted-data links | Full page, 1440 × 1372 |
 | [journey-flow.png](journey-flow.png) | Branches and loops starter, selected Browse twice, and scoped counter controls | App full-screen canvas at 1600 × 1200; Fit at 64% |
-| [jmx-import.jpg](jmx-import.jpg) | Bundled HTTP sample, component review, runtime policies, and property defaults | Full page, 1440 × 1716 |
+| [jmx-import.jpg](jmx-import.jpg) | Bundled HTTP sample, component review, runtime policies, and property defaults | Full page, 1440 × 1572 |
 
 The normal viewport is 1440 × 960 with device scale 1. The branch/loop image uses
 the app's Full screen control at 1600 × 1200 to make the complete flow readable.
@@ -38,7 +38,7 @@ the capture timing. No animation is added to the app.
 3. Start the dashboard with a dedicated workspace, for example:
 
    ```sh
-   ./bin/gmeter ui -listen 127.0.0.1:8792 -data /tmp/gmeter-media-workspace
+   ./bin/gometer ui -listen 127.0.0.1:8792 -data /tmp/gometer-media-workspace
    ```
 
 4. Set **Theme → Dark**, hide the welcome tip, and load **Local smoke test**.

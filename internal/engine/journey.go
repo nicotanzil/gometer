@@ -14,9 +14,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"gmeter/internal/config"
-	"gmeter/internal/correlation"
-	"gmeter/internal/metrics"
+	"gometer/internal/config"
+	"gometer/internal/correlation"
+	"gometer/internal/metrics"
 )
 
 type JourneyMetrics struct {

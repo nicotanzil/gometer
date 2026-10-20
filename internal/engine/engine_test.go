@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"gmeter/internal/config"
-	"gmeter/internal/metrics"
+	"gometer/internal/config"
+	"gometer/internal/metrics"
 )
 
 func testConfig(url string) config.Config {

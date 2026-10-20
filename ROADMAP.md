@@ -1,4 +1,4 @@
-# gmeter development roadmap
+# GoMeter development roadmap
 
 Each milestone should leave a usable application. This file carries the plan
 between sessions; update it when functionality or priorities change.
@@ -81,7 +81,7 @@ journey arrivals and HTTP request attempts have separate counts and rates.
 - [x] Limited JMeter 5.6.3 duration-based HTTP conversion with scoped headers,
   static variables, raw bodies, fixed loops, basic assertions, and explicit
   cookie behavior. Unsupported settings block executable output.
-- [x] Required gmeter runtime review, server-side reanalysis, bounded XML,
+- [x] Required GoMeter runtime review, server-side reanalysis, bounded XML,
   original source retention, and persistent non-runnable migration drafts.
 - [x] Malformed/unsupported fixtures, counted native HTTP execution, persistence,
   authorization and source-provenance checks. See docs/jmx-import.md.
@@ -108,7 +108,7 @@ and a guided finite JMX import executing 5 journeys / 15 HTTP attempts.
 Builder and results fit at 320px; browser warning/error logs were empty.
 This verifies native conversion behavior, not cross-engine equivalence or
 comparative performance. The isolated review is at localhost:52740, with
-workspace data under `/private/tmp/gmeter-iterations-review` and QA images in
+workspace data under `/private/tmp/gometer-iterations-review` and QA images in
 ignored `work/iterations-qa/`.
 
 ### Test-wide failure actions (15 October 2026)
@@ -135,7 +135,7 @@ Error thresholds were disabled, but both policies failed their mandatory check.
 The guided JMX review showed the graceful sampler/journey difference at review
 and save; the converted plan stopped after 1/2 journeys and one HTTP attempt.
 The 320px controls fit without page overflow and browser warning/error logs
-were empty. Review: localhost:53140, workspace `/private/tmp/gmeter-test-stop-review`,
+were empty. Review: localhost:53140, workspace `/private/tmp/gometer-test-stop-review`,
 QA images in ignored `work/test-stop-qa/`. Checkpoint before this increment:
 `2fa5450`. No cross-engine equivalence is claimed.
 
@@ -185,7 +185,7 @@ schedule fields, 320px builder/results have no page overflow, and console
 warning/error logs were empty. Observed users remain sampled, not exact peaks.
 This verifies native behavior against source-backed mapping rules; executing
 the same fixtures in JMeter and comparative performance remain unverified.
-Review: localhost:52840 with isolated `/private/tmp/gmeter-users-review` data;
+Review: localhost:52840 with isolated `/private/tmp/gometer-users-review` data;
 demo target localhost:52841; screenshots in ignored `work/users-qa/`.
 
 ### Executable control flow acceptance (10 October 2026)
@@ -297,7 +297,7 @@ Target telemetry validation on 2026-10-05:
 - Live observations, chart switching, MiB units, and malformed metric JSON
   blocking were inspected. Browser error/warning logs were empty. Updated
   dashboard, demo, and workers remain at ports 8790, 8787, and 8801/8802,
-  respectively. Existing `.gmeter/` history is preserved. The dashboard/workers
+  respectively. Existing `.gometer/` history is preserved. The dashboard/workers
   retain the private token from ignored `work/distributed-token`.
 - Preview: `work/telemetry-preview.jpg`. HTML generation and escaping passed;
   standalone HTML visual layout remains unverified under the earlier browser
@@ -356,7 +356,7 @@ Distributed worker validation on 2026-10-05:
   it is not measured dropped traffic. Both workers were restored afterwards.
 - Live counters, final complete/incomplete rows, desktop and narrow layouts were
   inspected. Neither width had page overflow, and browser error logs were empty.
-- Dashboard remains at http://127.0.0.1:8790 with `.gmeter/` history preserved.
+- Dashboard remains at http://127.0.0.1:8790 with `.gometer/` history preserved.
   Local workers are at 127.0.0.1:8801 and :8802. These three processes inherit the
   same token from owner-readable ignored `work/distributed-token`; restarting
   them requires that environment value. Never include the token in reports.
@@ -409,17 +409,17 @@ Diagnostics validation on 2026-10-05:
 - Desktop and narrow layouts were inspected; the narrow view had no horizontal
   overflow and browser error logs were empty. Sample definitions and observer
   overhead are in docs/diagnostics.md.
-- The updated dashboard remains at http://127.0.0.1:8790 using `.gmeter/`.
+- The updated dashboard remains at http://127.0.0.1:8790 using `.gometer/`.
   Scratch reports and the preview screenshot are under ignored `work/`.
 
 Implementation decisions for milestone 3:
 
-- `gmeter ui` serves embedded HTML/CSS/JavaScript and starter configurations on
+- `gometer ui` serves embedded HTML/CSS/JavaScript and starter configurations on
   an explicit loopback IP. The same Go validator and engine execute every run.
 - One active dashboard run; browser disconnects do not cancel it. Stop and
   process signals cancel, drain, and persist partial results. Startup marks
   unfinished reservations abandoned rather than resuming them.
-- `.gmeter/` stores atomic, owner-readable scenario and run files. Limits are
+- `.gometer/` stores atomic, owner-readable scenario and run files. Limits are
   200 scenarios, 1000 runs, and 900 retained timeline points per run. The final
   result still covers the entire run.
 - Charts use interval counter deltas and cumulative latency quantiles. Cards
@@ -452,7 +452,7 @@ Milestone 3 validation on 2026-10-05:
 - Desktop charts and mobile layout were visually checked; the narrow viewport
   had no horizontal overflow. Browser error logs were empty.
 - QA artifacts live in ignored `work/dashboard-qa`; the user workspace defaults
-  to `.gmeter/`. The existing demo listener was reused and left running.
+  to `.gometer/`. The existing demo listener was reused and left running.
 
 Implementation decisions for milestone 2:
 
@@ -539,7 +539,7 @@ Validation on 2026-10-08:
 - Desktop and 320px checks showed no page overflow; coverage search/filtering
   and the 68-family catalog rendered correctly; browser warning/error logs were empty.
 - QA data and builder screenshot are under ignored `work/`; the review dashboard
-  uses `.gmeter/` on localhost:8790. No external targets were exercised.
+  uses `.gometer/` on localhost:8790. No external targets were exercised.
 
 User-guide validation on 2026-10-09:
 
@@ -637,3 +637,34 @@ logs were empty. Later focus/Shift-key refinements passed syntax/build checks,
 controller tests and the relevant browser check. Evidence is in ignored
 `work/shortcuts-qa/`; the review dashboard is at localhost:53340 with its local
 demo at localhost:53341. No commit or publication was performed for this increment.
+
+### GoMeter rename (20 October 2026)
+
+- [x] GoMeter branding in the dashboard, guides, standalone reports, and README media.
+- [x] `gometer` and `gometer-demo` commands, module imports, Docker entrypoint, release packages, and deployment templates.
+- [x] `.gometer/` workspace default, with `-data` for an explicitly selected directory.
+- [x] `GOMETER_*` worker and telemetry settings, read directly without aliases.
+- [x] Browser preferences, theme events, authentication headers/cookies, demo session cookies, and demo telemetry metrics use `gometer` identifiers.
+- [x] Compatibility helper and workspace discovery fallback removed; configuration has one set of names.
+
+Validation: 23 UI/model tests, vet, the full race suite with sequential packages
+(`GOFLAGS=-p=1 make check`), and both executable builds passed. All ten bundled
+JSON examples validate, both Kubernetes overlays render locally, and 212 local
+Markdown links resolve. An audit of active source, tests, examples, and docs found
+no remaining references to the previous application name.
+
+Earlier check runs hit existing short-window timing failures in CSV startup,
+phase recovery, and a distributed dashboard completion wait. The CSV test passed
+in isolation; all packages subsequently passed the final standard check. No
+engine behavior or timing-test assertions were changed for this rename. Logs are
+in `/private/tmp/gometer-clean-rename-qa/` on the development machine.
+
+An isolated local check confirmed the `.gometer/` default, no discovery of the
+previous workspace directory, rejection of the previous worker environment alias,
+and the new dashboard header, token metadata, download cookie, demo session cookie,
+and metric names. It completed a 3-journey / 9-request dashboard run, a 4-request
+CLI telemetry run, and a 4-request distributed run, all without errors. Evidence:
+`/private/tmp/gometer-clean-rename-qa/check-321ljgdc/`. The local workspace folder
+was renamed without changing its file contents; the review preview starts with
+a fresh temporary workspace at localhost:53440 and its demo at localhost:53441.
+The changes remain uncommitted.

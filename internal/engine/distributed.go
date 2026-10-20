@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"time"
 
-	"gmeter/internal/config"
-	"gmeter/internal/diagnostics"
-	"gmeter/internal/metrics"
+	"gometer/internal/config"
+	"gometer/internal/diagnostics"
+	"gometer/internal/metrics"
 )
 
 type Assignment struct {

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"gmeter/internal/distributed"
+	"gometer/internal/distributed"
 )
 
 func TestDashboardDistributedRunPersistenceAndImport(t *testing.T) {

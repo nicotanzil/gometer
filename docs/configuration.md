@@ -3,7 +3,7 @@
 [Documentation](README.md) · [Project overview](../README.md)
 
 JSON files are strict: unknown fields, invalid values, and trailing documents
-are rejected before sending traffic. `gmeter validate` performs no requests.
+are rejected before sending traffic. `gometer validate` performs no requests.
 Command-line flags override the corresponding scenario fields.
 
 ```json
@@ -95,7 +95,7 @@ available flags. `-out ''` and `-html ''` disable their respective artifacts.
 Validate before starting:
 
 ```sh
-./bin/gmeter validate -config examples/smoke.json
+./bin/gometer validate -config examples/smoke.json
 ```
 
 Validation does not contact targets, workers, or telemetry exporters. It checks
@@ -137,7 +137,7 @@ pause remains bounded by its own validation limits.
 ## User startup schedule
 
 Try [the user ramp example](../examples/users-ramp.json) in the builder's example
-menu, or run `./bin/gmeter run -config examples/users-ramp.json` with the demo
+menu, or run `./bin/gometer run -config examples/users-ramp.json` with the demo
 server running. It makes 12 requests: four users, three attempts each.
 
 With four users, `ramp_up: "4s"`, and `startup_delay: "2s"`, planned starts are

@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"gmeter/examples"
-	"gmeter/internal/jmx"
+	"gometer/examples"
+	"gometer/internal/jmx"
 )
 
 const maxMigrationDrafts = 50

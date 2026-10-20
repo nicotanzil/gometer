@@ -13,12 +13,12 @@ import (
 	"strings"
 	"time"
 
-	"gmeter/internal/config"
-	"gmeter/internal/diagnostics"
-	"gmeter/internal/engine"
-	"gmeter/internal/metrics"
-	"gmeter/internal/report"
-	"gmeter/internal/telemetry"
+	"gometer/internal/config"
+	"gometer/internal/diagnostics"
+	"gometer/internal/engine"
+	"gometer/internal/metrics"
+	"gometer/internal/report"
+	"gometer/internal/telemetry"
 )
 
 const maxSamples = 900

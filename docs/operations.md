@@ -2,7 +2,7 @@
 
 [Documentation](README.md) · [Project overview](../README.md)
 
-Use gmeter as a bounded experiment: choose the target and acceptance criteria,
+Use GoMeter as a bounded experiment: choose the target and acceptance criteria,
 record the environment, run the workload, retain evidence, and inspect what was
 actually delivered. The dashboard is single-user and listens on loopback by
 default. Distributed load uses the separate [worker control plane](workers.md).
@@ -45,7 +45,7 @@ Missing worker results mean unknown traffic and fail completion checks.
 ## Workspace ownership and retention
 
 ```sh
-./bin/gmeter ui -listen 127.0.0.1:8790 -data /path/to/private/workspace
+./bin/gometer ui -listen 127.0.0.1:8790 -data /path/to/private/workspace
 ```
 
 Use one dashboard process per data directory. There is no cross-process workspace
@@ -65,8 +65,8 @@ a non-loopback listener behind a TLS-terminating private ingress by setting an
 exact HTTPS origin:
 
 ```sh
-./bin/gmeter ui -listen 0.0.0.0:8790 \
-  -public-origin https://gmeter.example.internal \
+./bin/gometer ui -listen 0.0.0.0:8790 \
+  -public-origin https://gometer.example.internal \
   -data /data
 ```
 
@@ -98,18 +98,18 @@ has no recovery bin. Coordinate retention with your artifact storage policy.
 
 Stop the dashboard cleanly before copying its complete workspace. Store archives
 with restricted access because saved configurations may contain workload secrets.
-For the default `.gmeter` workspace on a POSIX shell:
+For the default `.gometer` workspace on a POSIX shell:
 
 ```sh
 umask 077
-tar -czf "gmeter-workspace-$(date +%Y%m%d-%H%M%S).tar.gz" .gmeter
+tar -czf "gometer-workspace-$(date +%Y%m%d-%H%M%S).tar.gz" .gometer
 ```
 
 To verify a backup, extract it into a new private directory, then start a separate
-dashboard pointing at the extracted `.gmeter` directory:
+dashboard pointing at the extracted `.gometer` directory:
 
 ```sh
-./bin/gmeter ui -listen 127.0.0.1:8793 -data /path/to/restored/.gmeter
+./bin/gometer ui -listen 127.0.0.1:8793 -data /path/to/restored/.gometer
 ```
 
 Confirm the expected saved scenarios and run counts, inspect a completed result,

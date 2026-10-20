@@ -1,7 +1,7 @@
 apiVersion: k8s.nginx.org/v1
 kind: Policy
 metadata:
-  name: gmeter-dashboard-vpn
+  name: gometer-dashboard-vpn
 spec:
   accessControl:
     # Replace this documentation-only network with the client source CIDR(s)

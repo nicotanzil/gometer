@@ -2,7 +2,7 @@
 
 // Runs before styles load so a saved dark theme does not flash light on reload.
 (() => {
-  const key = 'gmeter.theme.v1';
+  const key = 'gometer.theme.v1';
   const system = window.matchMedia('(prefers-color-scheme: dark)');
   let preference = 'system';
   try {
@@ -12,7 +12,7 @@
 
   function apply() {
     document.documentElement.dataset.theme = preference === 'system' ? (system.matches ? 'dark' : 'light') : preference;
-    window.dispatchEvent(new Event('gmeter:themechange'));
+    window.dispatchEvent(new Event('gometer:themechange'));
   }
   apply();
   system.addEventListener('change', () => { if (preference === 'system') apply(); });

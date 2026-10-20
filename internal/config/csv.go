@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"gmeter/internal/correlation"
+	"gometer/internal/correlation"
 )
 
 const MaxCSVRows = 10000

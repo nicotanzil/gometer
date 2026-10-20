@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 type DatasetResult struct {

@@ -7,7 +7,7 @@ To test a development server with a self-signed, expired, or mismatched
 certificate, explicitly opt in:
 
 ```sh
-./bin/gmeter run -url https://localhost:8443/work -insecure -rate 10 -duration 2s
+./bin/gometer run -url https://localhost:8443/work -insecure -rate 10 -duration 2s
 ```
 
 In the builder, expand **Request settings** and select **Skip HTTPS certificate

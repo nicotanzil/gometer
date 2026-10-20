@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 func pointer[T any](v T) *T { return &v }

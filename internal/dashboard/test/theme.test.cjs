@@ -31,14 +31,14 @@ function boot(saved = new Map(), systemDark = false) {
 }
 
 test('saved theme applies before the picker loads and persists after changing it', () => {
-  const saved = new Map([['gmeter.theme.v1', 'dark']]);
+  const saved = new Map([['gometer.theme.v1', 'dark']]);
   const page = boot(saved);
   assert.equal(page.root.dataset.theme, 'dark');
   page.ready();
   assert.equal(page.picker.value, 'dark');
   page.select('light');
   assert.equal(page.root.dataset.theme, 'light');
-  assert.equal(saved.get('gmeter.theme.v1'), 'light');
+  assert.equal(saved.get('gometer.theme.v1'), 'light');
   assert.equal(boot(saved, true).root.dataset.theme, 'light');
 });
 
@@ -55,5 +55,5 @@ test('system theme follows appearance changes and resumes after an override is c
   assert.equal(page.root.dataset.theme, 'light');
   page.select('system');
   assert.equal(page.root.dataset.theme, 'dark');
-  assert.equal(page.saved.has('gmeter.theme.v1'), false);
+  assert.equal(page.saved.has('gometer.theme.v1'), false);
 });

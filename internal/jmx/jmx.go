@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"gmeter/internal/config"
-	"gmeter/internal/correlation"
+	"gometer/internal/config"
+	"gometer/internal/correlation"
 )
 
 type Options struct {
@@ -116,7 +116,7 @@ func Analyze(r io.Reader, options Options) (Report, error) {
 	if options.AcceptRuntime {
 		status = "mapped"
 	}
-	a.global("runtime", "gmeter runtime policies", status, "Review required: gmeter uses a 5s total request timeout, 30s journey deadline, 10 MiB response limit, verified HTTPS, bounded loops and aggregates, and drains admitted journeys after the load window. gmeter uses one absolute group clock and creates user work at scheduled starts; JVM thread allocation is not preserved. JMeter listeners are replaced by gmeter reports. Connection implementations, default headers, cookie edge cases, and timing statistics can differ. This is conversion to gmeter behavior, not a JMeter runtime emulator.")
+	a.global("runtime", "GoMeter runtime policies", status, "Review required: GoMeter uses a 5s total request timeout, 30s journey deadline, 10 MiB response limit, verified HTTPS, bounded loops and aggregates, and drains admitted journeys after the load window. GoMeter uses one absolute group clock and creates user work at scheduled starts; JVM thread allocation is not preserved. JMeter listeners are replaced by GoMeter reports. Connection implementations, default headers, cookie edge cases, and timing statistics can differ. This is conversion to GoMeter behavior, not a JMeter runtime emulator.")
 	if a.cfg.HasTestStopPolicy() {
 		policy := "Stop Test Now cancels native workload contexts, including active HTTP and journey pauses; partial results are retained and a mandatory check fails. It cannot roll back server-side effects."
 		if a.cfg.ErrorAction() == config.StopTest {
@@ -222,7 +222,7 @@ func (a *analyzer) inventory(nodes []*tree, parent string) {
 		case "TestPlan", "ThreadGroup", "GenericController", "LoopController", "HTTPSamplerProxy", "ConfigTestElement", "HeaderManager", "Arguments", "CookieManager", "ResponseAssertion":
 		case "ResultCollector":
 			a.report.Components[t.index].Status = "notice"
-			a.report.Components[t.index].Details = []string{"JMeter listener files and display settings are replaced by gmeter reports; no JTL file is written. Review runtime policies."}
+			a.report.Components[t.index].Details = []string{"JMeter listener files and display settings are replaced by GoMeter reports; no JTL file is written. Review runtime policies."}
 		default:
 			a.issue(t, "blocked", "This component has no supported mapping. It is retained in the preview and migration draft; scripts and referenced files are never executed or opened.")
 		}
@@ -352,7 +352,7 @@ var property = regexp.MustCompile(`^__P\(([A-Za-z0-9_.-]+)(?:,([^(){}]*))?\)$`)
 
 func (a *analyzer) resolve(t *tree, s string, vars bool) string {
 	if strings.Contains(s, "{{") || strings.Contains(s, "}}") {
-		a.issue(t, "blocked", "Literal gmeter template delimiters in JMX need manual review.")
+		a.issue(t, "blocked", "Literal GoMeter template delimiters in JMX need manual review.")
 	}
 	result := reference.ReplaceAllStringFunc(s, func(match string) string {
 		name := match[2 : len(match)-1]
@@ -369,7 +369,7 @@ func (a *analyzer) resolve(t *tree, s string, vars bool) string {
 			a.inputs[p[1]] = input
 			if !supplied {
 				a.issue(t, "input", "Supply JMeter property "+p[1]+". No local JMeter properties or environment values are read.")
-				return "gmeter-missing-property"
+				return "gometer-missing-property"
 			}
 			if strings.Contains(value, "${") || strings.Contains(value, "{{") || strings.Contains(value, "}}") {
 				a.issue(t, "blocked", "Property values must be literal strings without template delimiters.")
@@ -378,14 +378,14 @@ func (a *analyzer) resolve(t *tree, s string, vars bool) string {
 		}
 		if !correlation.NameValid(name) || strings.HasPrefix(name, "__") {
 			a.issue(t, "blocked", "Unsupported function or variable expression: "+match)
-			return "gmeter-unsupported-expression"
+			return "gometer-unsupported-expression"
 		}
 		if vars {
 			if value, ok := a.variables[name]; ok {
 				return value
 			}
 			a.issue(t, "blocked", "Undefined variable: "+name)
-			return "gmeter-undefined-variable"
+			return "gometer-undefined-variable"
 		}
 		return "{{" + name + "}}"
 	})
@@ -423,7 +423,7 @@ func (a *analyzer) collectVariables(nodes []*tree, disabled bool) {
 					value = a.resolve(t, value, true)
 				}
 				a.variables[name] = value
-				a.issue(t, "mapped", "Initial variable: "+name+". Resolved once at import; request references remain editable gmeter templates.")
+				a.issue(t, "mapped", "Initial variable: "+name+". Resolved once at import; request references remain editable GoMeter templates.")
 			}
 		}
 		a.collectVariables(t.children, false)
@@ -552,7 +552,7 @@ func (a *analyzer) group(t *tree) {
 		if a.cfg.OnError == config.StopTestNow {
 			behavior = "A failure cancels active workload requests, journey pauses and pending user starts. Partial results are retained and a mandatory check fails. This is a native error-triggered stop, not a manual interruption or a server-side rollback."
 		}
-		a.issue(t, "mapped", fmt.Sprintf("Converted workload: %d concurrent user(s) %s. %s Admitted journeys drain under gmeter's runtime policies.", a.cfg.VUs, stop, behavior))
+		a.issue(t, "mapped", fmt.Sprintf("Converted workload: %d concurrent user(s) %s. %s Admitted journeys drain under GoMeter's runtime policies.", a.cfg.VUs, stop, behavior))
 	}
 }
 
@@ -689,7 +689,7 @@ func (a *analyzer) httpOptions(t *tree, p map[string]string) {
 	}
 	for _, name := range []string{"HTTPSampler.connect_timeout", "HTTPSampler.response_timeout", "HTTPSampler.proxyHost", "HTTPSampler.proxyPort", "HTTPSampler.proxyUser", "HTTPSampler.proxyPass", "HTTPSampler.sourceIp", "HTTPSampler.embedded_url_re"} {
 		if p[name] != "" && p[name] != "0" {
-			a.issue(t, "blocked", name+" needs a supported mapping; it cannot be silently replaced by gmeter defaults.")
+			a.issue(t, "blocked", name+" needs a supported mapping; it cannot be silently replaced by GoMeter defaults.")
 		}
 	}
 	if p["HTTPSampler.sourceType"] != "" && p["HTTPSampler.sourceType"] != "0" {

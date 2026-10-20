@@ -1,4 +1,4 @@
-# Contributing to gmeter
+# Contributing to GoMeter
 
 [Project overview](README.md) · [Documentation](docs/README.md)
 
@@ -25,8 +25,8 @@ go test -race ./...
 node --check internal/dashboard/assets/app.js
 node --check internal/dashboard/assets/journey-editor.js
 node --test internal/dashboard/test/*.test.cjs
-go build -o bin/gmeter ./cmd/gmeter
-go build -o bin/gmeter-demo ./cmd/gmeter-demo
+go build -o bin/gometer ./cmd/gometer
+go build -o bin/gometer-demo ./cmd/gometer-demo
 ```
 
 Race-enabled tests require a Go-supported race-detector platform and its host C
@@ -40,7 +40,7 @@ local HTTP target. Install Playwright in your development environment (outside
 the production assets), then set `PLAYWRIGHT_MODULE` to its absolute module path
 if it is not on Node's module search path. `CHROME_PATH` can select an existing
 Chrome/Chromium executable. This test creates and removes its own temporary data
-directory; it does not use `.gmeter/`. It checks editing, unfinished drafts,
+directory; it does not use `.gometer/`. It checks editing, unfinished drafts,
 dependency reordering, save/reload, literal user content, six viewport widths,
 and successful/failed journeys with independently counted HTTP requests.
 
@@ -49,13 +49,13 @@ and successful/failed journeys with independently counted HTTP requests.
 Use a dedicated workspace when testing UI behavior:
 
 ```sh
-./bin/gmeter-demo
+./bin/gometer-demo
 # In another terminal:
-./bin/gmeter ui -listen 127.0.0.1:8792 -data work/development
+./bin/gometer ui -listen 127.0.0.1:8792 -data work/development
 ```
 
 Do not run multiple dashboard processes against the same directory. `bin/`,
-`results/`, `work/`, and the default `.gmeter/` directory are ignored. A custom
+`results/`, `work/`, and the default `.gometer/` directory are ignored. A custom
 workspace elsewhere is not automatically ignored; avoid staging it or secrets.
 
 ## Before requesting review
@@ -67,7 +67,7 @@ workspace elsewhere is not automatically ignored; avoid staging it or secrets.
 - Add regression coverage for measurement, cancellation, persistence, parsing,
   TLS, or concurrency behavior that changed. Use a local deterministic fixture;
   do not make tests depend on an external service.
-- Check affected example files with `gmeter validate -config ...`.
+- Check affected example files with `gometer validate -config ...`.
 - For dashboard changes, verify the complete affected journey in a real browser,
   check narrow layouts, and inspect warning/error logs. Preserve editor drafts
   and use isolated test history.

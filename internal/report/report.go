@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gmeter/internal/config"
-	"gmeter/internal/design"
-	"gmeter/internal/engine"
-	"gmeter/internal/telemetry"
+	"gometer/internal/config"
+	"gometer/internal/design"
+	"gometer/internal/engine"
+	"gometer/internal/telemetry"
 )
 
 func JSON(w io.Writer, result engine.Result) error {
@@ -35,7 +35,7 @@ func CheckPath(path string) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
-	f, err := os.CreateTemp(filepath.Dir(path), ".gmeter-*")
+	f, err := os.CreateTemp(filepath.Dir(path), ".gometer-*")
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func Write(path string, render func(io.Writer) error) error {
 	if path == "" {
 		return nil
 	}
-	f, err := os.CreateTemp(filepath.Dir(path), ".gmeter-*")
+	f, err := os.CreateTemp(filepath.Dir(path), ".gometer-*")
 	if err != nil {
 		return err
 	}
@@ -67,6 +67,7 @@ func Write(path string, render func(io.Writer) error) error {
 
 var page = template.Must(template.New("report").Funcs(template.FuncMap{
 	"designCSS":      func() template.CSS { return template.CSS(design.ReportCSS) },
+	"brandMark":      func() template.HTML { return template.HTML(design.LogoSVG) },
 	"f":              func(v float64) string { return fmt.Sprintf("%.2f", v) },
 	"f1":             func(v float64) string { return fmt.Sprintf("%.1f", v) },
 	"mib":            func(v uint64) string { return fmt.Sprintf("%.2f", float64(v)/(1<<20)) },
@@ -114,7 +115,7 @@ var page = template.Must(template.New("report").Funcs(template.FuncMap{
 
 const htmlPage = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{{.Name}} · gmeter</title>
+<title>{{.Name}} · GoMeter</title>
 <style>
 :root{color-scheme:dark;--bg:#0c121c;--panel:#141d2b;--border:#273345;--muted:#96a7be;--text:#edf3fb;--mint:#7ce4bd;--red:#ff938a}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:1160px;margin:auto;padding:38px 32px 48px}
@@ -125,7 +126,7 @@ header{display:flex;justify-content:space-between;align-items:center;border-bott
 @media(max-width:900px){.grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){main{padding:22px 16px}.card{padding:16px}.value{font-size:25px}h1{font-size:27px}.tag{display:none}.stats{grid-template-columns:repeat(2,1fr)}footer{display:block}.check-value{white-space:normal}}
 {{designCSS}}
 </style></head><body><main>{{$traffic := .Arrivals}}
-<header><div class="brand">g<span>meter</span></div><div class="tag">Find your system's limits</div></header>
+<header><div class="brand">{{brandMark}}<span>GoMeter</span></div><div class="tag">Find your system's limits</div></header>
 <section class="hero"><div class="eyebrow">HTTP stress test · {{.Mode}} mode · {{if eq .Workload "journeys"}}journey workload{{else}}request workload{{end}}</div><h1>{{.Name}}<span class="badge {{if not .Passed}}fail{{end}}">{{if .Interrupted}}INTERRUPTED{{else if .Passed}}PASS{{else}}FAIL{{end}}</span></h1><div class="target">{{if ne .Workload "journeys"}}{{.Method}} {{end}}{{.URL}}</div><div class="details"><span>{{.StartedAt.Format "2006-01-02 15:04:05 UTC"}}</span><span>{{f .LoadSeconds}}s load · {{drain .TotalSeconds .LoadSeconds .UserSchedule}}s {{if or .Distribution .Telemetry}}drain + collection{{else}}drain{{end}}</span><span>{{.ConcurrencyLimit}} concurrent {{if eq .Workload "journeys"}}journey{{else}}request{{end}} limit</span><span>{{.ArrivalDistribution}} arrivals</span></div></section>
 {{if .Datasets}}<div class="details"><span>Stopped: {{stopReason .StopReason}}</span>{{range .Datasets}}<span>CSV {{.Scenario}} · {{.Name}} · {{.Rows}} source rows · {{.Sharing}} · {{.OnEOF}} · {{.RowsAssigned}} rows assigned · {{.UsersExhausted}} users finished at EOF</span>{{end}}</div>{{end}}
 {{if .UserSchedule}}<div class="details"><span>{{f .UserSchedule.StartupSeconds}}s startup wait / {{f .UserSchedule.PlannedStartupSeconds}}s planned</span><span>{{f .UserSchedule.RampUpSeconds}}s user ramp</span><span>{{.UserSchedule.Users.Started}} / {{.UserSchedule.Users.Planned}} users started · {{.UserSchedule.Users.Finished}} finished</span><span>Stopped: {{stopReason .StopReason}}</span></div>{{end}}
@@ -144,5 +145,5 @@ header{display:flex;justify-content:space-between;align-items:center;border-bott
 {{range .Scenarios}}<section class="panel" style="margin-top:22px"><h2>{{.Name}} <span class="badge {{if not .Passed}}fail{{end}}">{{if not .Passed}}CHECKS FAILED{{else if not .Journeys.Completed}}NO SAMPLES{{else if not .Checks}}NO CHECKS{{else}}CHECKS PASSED{{end}}</span></h2><div class="details"><span>Weight {{.Weight}}</span><span>{{n .Journeys.Completed}} completed journeys</span><span>{{f .Journeys.ErrorPercent}}% journey errors</span><span>{{f .Journeys.DropPercent}}% missed arrivals</span><span>P95 journey {{f .Journeys.Latency.P95MS}} ms</span></div><div class="scroll"><table><thead><tr><th>Step</th><th>Method</th><th>Attempts</th><th>Skipped journeys</th><th>Errors</th><th>P95</th></tr></thead><tbody>{{range .Steps}}<tr><td>{{.Name}}</td><td>{{.Method}}</td><td>{{n .Completed}}</td><td>{{n .Skipped}}{{if .SkippedCondition}} ({{n .SkippedCondition}} conditional){{end}}</td><td class="{{if .Failed}}bad{{end}}">{{f .ErrorPercent}}%{{range $category,$count:=.Errors}}<div class="note">{{label $category}}: {{n $count}}</div>{{end}}</td><td>{{if .Latency.Samples}}{{f .Latency.P95MS}} ms{{else}}—{{end}}</td></tr>{{end}}</tbody></table></div>{{if .Controls}}<h3>Control flow</h3><div class="scroll"><table><thead><tr><th>Control</th><th>Kind</th><th>Visits</th><th>True / False</th><th>Iterations</th><th>Failed</th></tr></thead><tbody>{{range .Controls}}<tr><td>{{.Name}}</td><td>{{.Kind}}</td><td>{{n .Entered}}</td><td>{{n .ConditionTrue}} / {{n .ConditionFalse}}</td><td>{{n .Iterations}}</td><td>{{n .Failed}}</td></tr>{{end}}</tbody></table></div>{{end}}{{range $category,$count:=.Journeys.Errors}}<div class="small bad">Journey {{label $category}}: {{n $count}}</div>{{end}}<p class="small">Attempts count HTTP executions, including repeated loop requests. Skipped journeys never attempted that request node; conditional skips identify an unchosen path or a zero-iteration body. Other skips follow failure or cancellation. Control counts have no HTTP latency.</p></section>{{end}}
 {{template "diagnostics" .}}
 {{template "telemetry" .}}
-<footer><span>gmeter · report schema {{.SchemaVersion}} · standalone report</span><span>Latency quantiles use bounded histograms with ≤1% bucket error plus 1 ns rounding.<br>Throughput averages use the load window; response drain is separate.</span></footer>
+<footer><span>GoMeter · report schema {{.SchemaVersion}} · standalone report</span><span>Latency quantiles use bounded histograms with ≤1% bucket error plus 1 ns rounding.<br>Throughput averages use the load window; response drain is separate.</span></footer>
 </main></body></html>`

@@ -222,5 +222,5 @@
   function describe(step) {if(step.if){const c=step.if.condition;return `${c.variable} ${c.operator||'equals'}${c.value!==undefined?' '+c.value:''}`;}if(step.loop)return step.loop.count!=null?`${step.loop.count} iterations`:`While ${step.loop.while.variable} ${step.loop.while.operator||'equals'} ${step.loop.while.value??''} · max ${step.loop.max_iterations}`;return step.url||'Choose a request path';}
   const model = {copy,shape,mutate,dependencies,layout,stepName,unique,templates,flatten,containers,kind,describe};
   if (typeof module !== 'undefined' && module.exports) module.exports = model;
-  else root.GmeterJourneyModel = model;
+  else root.GoMeterJourneyModel = model;
 })(globalThis);

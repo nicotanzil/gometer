@@ -10,8 +10,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"gmeter/internal/config"
-	"gmeter/internal/telemetry"
+	"gometer/internal/config"
+	"gometer/internal/telemetry"
 )
 
 func TestTargetTelemetryIsSeparateFromRequestAndGeneratorMetrics(t *testing.T) {

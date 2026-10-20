@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"gmeter/internal/engine"
+	"gometer/internal/engine"
 )
 
 func TestInsecureFlagOverridesConfigAndLabelsReports(t *testing.T) {

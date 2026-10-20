@@ -20,15 +20,15 @@ import (
 	"sync"
 	"time"
 
-	"gmeter/examples"
-	"gmeter/internal/config"
-	"gmeter/internal/design"
-	"gmeter/internal/diagnostics"
-	"gmeter/internal/distributed"
-	"gmeter/internal/engine"
-	"gmeter/internal/metrics"
-	"gmeter/internal/report"
-	"gmeter/internal/telemetry"
+	"gometer/examples"
+	"gometer/internal/config"
+	"gometer/internal/design"
+	"gometer/internal/diagnostics"
+	"gometer/internal/distributed"
+	"gometer/internal/engine"
+	"gometer/internal/metrics"
+	"gometer/internal/report"
+	"gometer/internal/telemetry"
 )
 
 //go:embed assets/*
@@ -87,7 +87,7 @@ func Listen(address, publicOrigin string) (net.Listener, error) {
 func parsePublicOrigin(raw string) (host, origin string, err error) {
 	u, err := url.Parse(raw)
 	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
-		return "", "", fmt.Errorf("-public-origin must be an HTTPS origin such as https://gmeter.example.com, without a path, credentials, query, or fragment")
+		return "", "", fmt.Errorf("-public-origin must be an HTTPS origin such as https://gometer.example.com, without a path, credentials, query, or fragment")
 	}
 	name := strings.ToLower(u.Hostname())
 	if name == "" || strings.Contains(name, "%") {
@@ -118,7 +118,7 @@ func New(ctx context.Context, dir, host, origin string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Server{store: saved, ctx: ctx, token: token, host: host, origin: origin, secureCookie: strings.HasPrefix(origin, "https://"), exports: map[string]configExport{}, workerToken: os.Getenv("GMETER_WORKER_TOKEN"), workerCA: os.Getenv("GMETER_WORKER_CA"), telemetryToken: os.Getenv("GMETER_TELEMETRY_TOKEN"), telemetryCA: os.Getenv("GMETER_TELEMETRY_CA")}, nil
+	return &Server{store: saved, ctx: ctx, token: token, host: host, origin: origin, secureCookie: strings.HasPrefix(origin, "https://"), exports: map[string]configExport{}, workerToken: os.Getenv("GOMETER_WORKER_TOKEN"), workerCA: os.Getenv("GOMETER_WORKER_CA"), telemetryToken: os.Getenv("GOMETER_TELEMETRY_TOKEN"), telemetryCA: os.Getenv("GOMETER_TELEMETRY_CA")}, nil
 }
 
 func Serve(ctx context.Context, address, dir, publicOrigin string, output io.Writer) error {
@@ -140,10 +140,10 @@ func Serve(ctx context.Context, address, dir, publicOrigin string, output io.Wri
 		return err
 	}
 	if publicOrigin != "" {
-		fmt.Fprintln(output, "Warning: gmeter is single-user; protect this listener with a VPN or ingress authentication and an allowlist.")
+		fmt.Fprintln(output, "Warning: GoMeter is single-user; protect this listener with a VPN or ingress authentication and an allowlist.")
 	}
 	httpServer := &http.Server{Handler: s, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 << 10}
-	fmt.Fprintf(output, "gmeter dashboard: %s\nDashboard listener: %s\nSaved scenarios and runs: %s\n", origin, ln.Addr(), dir)
+	fmt.Fprintf(output, "GoMeter dashboard: %s\nDashboard listener: %s\nSaved scenarios and runs: %s\n", origin, ln.Addr(), dir)
 	stopped := make(chan struct{})
 	go func() {
 		select {
@@ -184,7 +184,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
 	if r.Host != s.host {
-		fail(w, http.StatusForbidden, "Use the dashboard URL printed by gmeter.")
+		fail(w, http.StatusForbidden, "Use the dashboard URL printed by GoMeter.")
 		return
 	}
 	if site := r.Header.Get("Sec-Fetch-Site"); site == "cross-site" {
@@ -196,7 +196,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if strings.HasPrefix(r.URL.Path, "/download/") {
-		cookie, err := r.Cookie("gmeter-download")
+		cookie, err := r.Cookie("gometer-download")
 		if err != nil || subtle.ConstantTimeCompare([]byte(cookie.Value), []byte(s.token)) != 1 {
 			fail(w, 403, "Reload the dashboard before downloading.")
 			return
@@ -211,7 +211,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			w.Header().Set("Content-Disposition", `attachment; filename="gmeter-scenario.json"`)
+			w.Header().Set("Content-Disposition", `attachment; filename="gometer-scenario.json"`)
 			w.Write(export.data)
 			return
 		}
@@ -225,7 +225,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if strings.HasPrefix(r.URL.Path, "/api/") {
-		if subtle.ConstantTimeCompare([]byte(r.Header.Get("X-Gmeter-Token")), []byte(s.token)) != 1 {
+		if subtle.ConstantTimeCompare([]byte(r.Header.Get("X-Gometer-Token")), []byte(s.token)) != 1 {
 			fail(w, http.StatusForbidden, "Reload the dashboard to reconnect.")
 			return
 		}
@@ -240,7 +240,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/":
 		// This cookie authorizes only read-only native downloads. API mutations
 		// still require the startup token in a custom header.
-		http.SetCookie(w, &http.Cookie{Name: "gmeter-download", Value: s.token, Path: "/download/", HttpOnly: true, Secure: s.secureCookie, SameSite: http.SameSiteStrictMode})
+		http.SetCookie(w, &http.Cookie{Name: "gometer-download", Value: s.token, Path: "/download/", HttpOnly: true, Secure: s.secureCookie, SameSite: http.SameSiteStrictMode})
 		page, _ := assets.ReadFile("assets/index.html")
 		t, err := template.New("dashboard").Parse(string(page))
 		if err != nil {
@@ -251,15 +251,23 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodHead {
 			t.Execute(w, s.token)
 		}
-	case "/fonts.css", "/BricolageGrotesque-Latin.woff2", "/BricolageGrotesque-LatinExt.woff2", "/HankenGrotesk-Latin.woff2", "/HankenGrotesk-LatinExt.woff2":
+	case "/fonts.css", "/BricolageGrotesque-Latin.woff2", "/BricolageGrotesque-LatinExt.woff2", "/HankenGrotesk-Latin.woff2", "/HankenGrotesk-LatinExt.woff2",
+		"/gometer-mark.svg", "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png":
 		body, err := design.Files.ReadFile("assets" + r.URL.Path)
 		if err != nil {
 			fail(w, 404, "Asset not found.")
 			return
 		}
 		kind := "font/woff2"
-		if r.URL.Path == "/fonts.css" {
+		switch {
+		case strings.HasSuffix(r.URL.Path, ".css"):
 			kind = "text/css; charset=utf-8"
+		case strings.HasSuffix(r.URL.Path, ".svg"):
+			kind = "image/svg+xml"
+		case strings.HasSuffix(r.URL.Path, ".ico"):
+			kind = "image/x-icon"
+		case strings.HasSuffix(r.URL.Path, ".png"):
+			kind = "image/png"
 		}
 		w.Header().Set("Content-Type", kind)
 		if r.Method != http.MethodHead {
@@ -501,7 +509,7 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 		// Downloads never put authentication tokens in URLs.
 		switch parts[1] {
 		case "export":
-			w.Header().Set("Content-Disposition", `attachment; filename="gmeter-run-`+id+`.json"`)
+			w.Header().Set("Content-Disposition", `attachment; filename="gometer-run-`+id+`.json"`)
 			jsonResponse(w, 200, run)
 		case "config":
 			jsonResponse(w, 200, run.Config)
@@ -510,7 +518,7 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 				fail(w, 409, "Final results are not available yet.")
 				return
 			}
-			w.Header().Set("Content-Disposition", `attachment; filename="gmeter-`+id+`.`+strings.TrimPrefix(parts[1], "report.")+`"`)
+			w.Header().Set("Content-Disposition", `attachment; filename="gometer-`+id+`.`+strings.TrimPrefix(parts[1], "report.")+`"`)
 			if parts[1] == "report.json" {
 				w.Header().Set("Content-Type", "application/json")
 				report.JSON(w, *run.Result)
@@ -528,7 +536,7 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 }
 
 // Imports are records of someone else's measurements. Validate structure and
-// accounting, but do not imply that gmeter independently verified the traffic.
+// accounting, but do not imply that GoMeter independently verified the traffic.
 func (s *Server) importRun(w http.ResponseWriter, r *http.Request) {
 	if strings.Split(r.Header.Get("Content-Type"), ";")[0] != "application/json" {
 		fail(w, 400, "Send a run bundle as JSON.")
@@ -722,7 +730,7 @@ func (s *Server) start(w http.ResponseWriter, c config.Config, p config.Plan) {
 	}
 	if len(c.Workers) > 0 {
 		if err := distributed.ValidToken(s.workerToken); err != nil {
-			fail(w, 400, "Set GMETER_WORKER_TOKEN before starting the dashboard to use workers.")
+			fail(w, 400, "Set GOMETER_WORKER_TOKEN before starting the dashboard to use workers.")
 			return
 		}
 	}

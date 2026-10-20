@@ -1,6 +1,6 @@
 'use strict';
 
-globalThis.GmeterCSV = (() => {
+globalThis.GoMeterCSV = (() => {
   const el=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;};
   function create({api}) {
     const dialog=el('dialog',undefined,'csv-dialog');

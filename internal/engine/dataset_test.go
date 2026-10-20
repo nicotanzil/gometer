@@ -3,7 +3,7 @@ package engine
 import (
 	"context"
 	"fmt"
-	"gmeter/internal/config"
+	"gometer/internal/config"
 	"net/http"
 	"net/http/httptest"
 	"strings"

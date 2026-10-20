@@ -33,7 +33,7 @@
   function create({allowed,perform,onError=()=>{}}){
     const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
     const mac=/Mac|iPhone|iPad/.test(navigator.platform),mod=mac?'⌘':'Ctrl';
-    const preference='gmeter.shortcuts.characters.v1';let enabled=true,previousFocus=null;
+    const preference='gometer.shortcuts.characters.v1';let enabled=true,previousFocus=null;
     try{enabled=localStorage.getItem(preference)!=='off';}catch{/* Preferences still work for this visit. */}
     const dialog=el('dialog',undefined,'shortcuts-dialog');dialog.id='keyboard-shortcuts-dialog';dialog.setAttribute('aria-labelledby','shortcuts-title');dialog.setAttribute('aria-describedby','shortcuts-intro');
     dialog.innerHTML='<form method="dialog" class="shortcuts-heading"><div><div class="eyebrow">WORK FASTER</div><h2 id="shortcuts-title">Keyboard shortcuts</h2></div><button class="text-button" aria-label="Close keyboard shortcuts" value="close">✕</button></form><p id="shortcuts-intro">Keep your hands on the keyboard. Press G, release it, then a destination key within two seconds.</p><div class="shortcuts-groups"><section><h3>Go to a view</h3><dl data-navigation></dl></section><section><h3>Build a test</h3><dl data-builder></dl><p class="helper">Builder actions use your current settings and the same checks as their buttons. Start run sends workload traffic.</p></section></div><div class="shortcuts-general"><span>Show this reference <kbd>?</kbd></span><span>Close dialog / cancel G sequence <kbd>Esc</kbd></span></div><label class="shortcuts-preference"><input type="checkbox" id="shortcut-characters"> Enable G sequences and ?</label><p class="helper">Character keys stay inactive in text fields and dialogs. Turn them off here if they interfere with your input tools. Modifier shortcuts stay available.</p><p class="helper">Canvas Undo works outside text fields. Your normal text undo, copy, paste, and browser shortcuts remain available.</p>';
@@ -61,5 +61,5 @@
     return {open};
   }
   const api={controller,create};
-  if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GmeterShortcuts=api;
+  if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GoMeterShortcuts=api;
 })(globalThis);

@@ -63,19 +63,19 @@ jobs:
           for target in darwin/arm64 linux/amd64 windows/amd64; do
             target_os="${target%/*}"
             target_arch="${target#*/}"
-            build_dir="$RUNNER_TEMP/gmeter-${target_os}-${target_arch}"
-            executable="gmeter"
+            build_dir="$RUNNER_TEMP/gometer-${target_os}-${target_arch}"
+            executable="gometer"
             if [[ "$target_os" == "windows" ]]; then
-              executable="gmeter.exe"
+              executable="gometer.exe"
             fi
             mkdir -p "$build_dir"
 
             CGO_ENABLED=0 GOOS="$target_os" GOARCH="$target_arch" go build \
               -trimpath \
-              -ldflags="-X gmeter/internal/cli.Version=$VERSION" \
-              -o "$build_dir/$executable" ./cmd/gmeter
+              -ldflags="-X gometer/internal/cli.Version=$VERSION" \
+              -o "$build_dir/$executable" ./cmd/gometer
 
-            archive="gmeter_${VERSION}_${target_os}_${target_arch}"
+            archive="gometer_${VERSION}_${target_os}_${target_arch}"
             if [[ "$target_os" == "windows" ]]; then
               (cd "$build_dir" && zip "$packages/$archive.zip" "$executable")
             else
@@ -83,8 +83,8 @@ jobs:
             fi
           done
 
-          actual_version="$("$RUNNER_TEMP/gmeter-linux-amd64/gmeter" version)"
-          [[ "$actual_version" == "gmeter $VERSION" ]]
+          actual_version="$("$RUNNER_TEMP/gometer-linux-amd64/gometer" version)"
+          [[ "$actual_version" == "GoMeter $VERSION" ]]
           echo "$actual_version"
 
           cd "$packages"
@@ -94,7 +94,7 @@ jobs:
       - name: Save build artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: gmeter-packages-${{ steps.version.outputs.value }}
+          name: gometer-packages-${{ steps.version.outputs.value }}
           path: bin/release/packages/*
           if-no-files-found: error
           compression-level: 0
@@ -106,8 +106,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.ref_name }}
         run: |
-          gh release create "$TAG_NAME" bin/release/packages/* \
-            --repo "$GITHUB_REPOSITORY" \
-            --verify-tag \
-            --title "gmeter $TAG_NAME" \
-            --generate-notes
+          release_args=(
+            --repo "$GITHUB_REPOSITORY"
+            --verify-tag
+            --title "GoMeter $TAG_NAME"
+          )
+          notes_file="docs/releases/${TAG_NAME}.md"
+          if [[ -f "$notes_file" ]]; then
+            release_args+=(--notes-file "$notes_file")
+          else
+            release_args+=(--generate-notes)
+          fi
+          gh release create "$TAG_NAME" bin/release/packages/* "${release_args[@]}"

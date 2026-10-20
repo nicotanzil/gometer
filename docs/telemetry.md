@@ -2,15 +2,15 @@
 
 [Documentation](README.md) · [Project overview](../README.md)
 
-gmeter can scrape selected scalar series from a server's Prometheus
+GoMeter can scrape selected scalar series from a server's Prometheus
 text exporter while a test runs. This is opt-in and separate from generator
 diagnostics. The CLI, dashboard, and distributed coordinator use the same
 collector. A Prometheus server is not required.
 
-Start the rebuilt `./bin/gmeter-demo`, then run:
+Start the rebuilt `./bin/gometer-demo`, then run:
 
 ```sh
-./bin/gmeter run -config examples/telemetry.json
+./bin/gometer run -config examples/telemetry.json
 ```
 
 The example has baseline, overload, and recovery phases. Its intentional HTTP
@@ -37,8 +37,8 @@ scenario. Omit it, set it to `null`, or use `-telemetry=false` to disable collec
     "interval": "1s",
     "timeout": "1s",
     "metrics": [
-      { "name": "gmeter_demo_active_work", "kind": "gauge", "unit": "slots", "title": "Active server work" },
-      { "name": "gmeter_demo_work_requests_total", "labels": { "outcome": "rejected" }, "kind": "counter", "unit": "requests" }
+      { "name": "gometer_demo_active_work", "kind": "gauge", "unit": "slots", "title": "Active server work" },
+      { "name": "gometer_demo_work_requests_total", "labels": { "outcome": "rejected" }, "kind": "counter", "unit": "requests" }
     ]
   }
 }
@@ -84,7 +84,7 @@ describes gauge and counter semantics.
 ## Credentials and transport
 
 For authenticated exporters, set `bearer_auth: true` and provide
-`GMETER_TELEMETRY_TOKEN` to the CLI or dashboard process before startup. Tokens
+`GOMETER_TELEMETRY_TOKEN` to the CLI or dashboard process before startup. Tokens
 must contain 1–4096 ASCII characters without whitespace. The token is a private
 runtime option and is never stored in configurations, reports, workspace files,
 or browser payloads. Workload headers, cookies, and worker credentials are not
@@ -93,12 +93,12 @@ used for exporter requests.
 Authenticated remote exporters require HTTPS. Plaintext bearer authentication
 is allowed only for literal loopback IPs, including `127.0.0.1` and `::1`.
 TLS verifies system roots and the endpoint hostname. `-telemetry-ca /path/ca.pem`
-adds a CA for the CLI; `GMETER_TELEMETRY_CA` sets the CLI default and dashboard
+adds a CA for the CLI; `GOMETER_TELEMETRY_CA` sets the CLI default and dashboard
 startup setting. Certificate verification cannot be disabled. Redirects are
 not followed and responses are not decompressed. Telemetry connects directly;
 proxy environment variables continue to apply to workload requests only.
 
-`gmeter validate`, configuration saves, and bundle imports perform no network
+`gometer validate`, configuration saves, and bundle imports perform no network
 requests and need no token or CA file. Starting a run checks local credential/CA
 setup before workload traffic. Changing `-url` overrides only the workload URL;
 edit `telemetry.url` separately when changing the exporter.

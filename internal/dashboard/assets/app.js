@@ -1,7 +1,7 @@
 'use strict';
 
 const $ = id => document.getElementById(id);
-const token = document.querySelector('meta[name="gmeter-token"]').content;
+const token = document.querySelector('meta[name="gometer-token"]').content;
 let examples = [], library = [], runs = [], current = null, selectedScenario = '', activeID = '', view = 'build';
 let selectedRuns = new Set(), timer = null, polling = false, telemetryFormError = '', builderFormError = '', journeyFormError = '';
 let coverage = [];
@@ -23,7 +23,7 @@ stackedBuilder.addEventListener('change', placePlanPreview);
 placePlanPreview();
 
 async function api(path, method = 'GET', body) {
-  const options = {method, headers: {'X-Gmeter-Token': token}};
+  const options = {method, headers: {'X-Gometer-Token': token}};
   if (body !== undefined) { options.headers['Content-Type'] = 'application/json'; options.body = typeof body === 'string' ? body : JSON.stringify(body); }
   const response = await fetch(path, options);
   if (!response.ok) {
@@ -35,8 +35,8 @@ async function api(path, method = 'GET', body) {
 
 function notice(message, bad = false) { $('notice').textContent = message; $('notice').className = bad ? 'bad' : ''; $('notice').hidden = false; }
 function validateMessage(message, kind = '') { $('validation').textContent = message; $('validation').className = `validation ${kind}`; }
-const csvImport = GmeterCSV.create({api});
-const journeyEditor = GmeterJourneyEditor.create($('journey-canvas'), {
+const csvImport = GoMeterCSV.create({api});
+const journeyEditor = GoMeterJourneyEditor.create($('journey-canvas'), {
   read: () => { if (builderFormError || telemetryFormError) throw new Error(builderFormError || telemetryFormError); return readEditor(true); },
   write: c => { $('config-json').value = JSON.stringify(c, null, 2); syncForm(c); validateMessage('Journey changed. Validate before running.'); },
   onDraftError: error => { journeyFormError = error; },
@@ -46,8 +46,8 @@ const journeyEditor = GmeterJourneyEditor.create($('journey-canvas'), {
   save: () => saveScenario(false),
   start: startBuilderRun
 });
-const runJourneyEditor = GmeterJourneyEditor.create($('run-journey-canvas'), {readonly:true});
-const jmxImport = GmeterJMX.create($('view-jmx'), {
+const runJourneyEditor = GoMeterJourneyEditor.create($('run-journey-canvas'), {readonly:true});
+const jmxImport = GoMeterJMX.create($('view-jmx'), {
   api, show:()=>showView('jmx'), close:()=>showView('build'), help:()=>openGuide('guide-jmx'), refresh,
   load:(config,id)=>{setEditor(config,id);showView('build');notice('Imported scenario loaded. Review it before starting a run.');}
 });
@@ -96,7 +96,7 @@ async function settleShortcutInput(action,restore=true) {
   try { await action(); }
   finally { if(restore&&view==='build'&&input?.isConnected&&input.getClientRects().length)input.focus({preventScroll:true}); }
 }
-GmeterShortcuts.create({
+GoMeterShortcuts.create({
   allowed: action => {
     if(['validate','save','start','undo'].includes(action))return view==='build'&&(action!=='start'||!activeID&&!$('start').disabled)&&(action!=='undo'||!$('journey-canvas').hidden&&journeyEditor.canUndo());
     return true;
@@ -427,7 +427,7 @@ async function saveScenario(copy = false) {
 $('save-scenario').addEventListener('click', () => saveScenario());
 $('save-copy').addEventListener('click', () => saveScenario(true));
 $('export-config').addEventListener('click', async () => {
-  try { const exported = await (await api('/api/config-export', 'POST', readEditor())).json(); downloadURL(exported.path, 'gmeter-scenario.json'); }
+  try { const exported = await (await api('/api/config-export', 'POST', readEditor())).json(); downloadURL(exported.path, 'gometer-scenario.json'); }
   catch (e) { notice(e.message, true); }
 });
 $('import-config').addEventListener('click', () => $('file-input').click());
@@ -658,7 +658,7 @@ function renderResults(result) {
   }));
 }
 for (const [id, suffix, extension] of [['download-json', 'report.json', 'json'], ['download-html', 'report.html', 'html'], ['download-run', 'export', 'json']]) $(id).addEventListener('click', async () => {
-  downloadURL(`/download/${current.id}/${suffix}`, `gmeter-${suffix === 'export' ? 'run-' : ''}${current.id}.${extension}`);
+  downloadURL(`/download/${current.id}/${suffix}`, `gometer-${suffix === 'export' ? 'run-' : ''}${current.id}.${extension}`);
 });
 function downloadURL(path, filename) {
   const a = node('a'); a.href = path; a.download = filename;
@@ -779,7 +779,7 @@ function drawCharts() {
   }
   drawTelemetryChart();
 }
-window.addEventListener('gmeter:themechange', () => requestAnimationFrame(drawCharts));
+window.addEventListener('gometer:themechange', () => requestAnimationFrame(drawCharts));
 function drawTelemetryChart() {
   if (!current||view!=='live'||$('telemetry-panel').hidden) return;
   const points=telemetryPoints(current), index=Number($('telemetry-series').value)||0, m=current.result?.telemetry?.series[index]?.metric||current.config.telemetry.metrics[index];
@@ -867,7 +867,7 @@ function renderCoverage() {
   const query = $('coverage-search').value.toLowerCase(), status = $('coverage-status').value;
   const rows = coverage.features.filter(f => (!status || f.status === status) && `${f.name} ${f.group} ${f.detail}`.toLowerCase().includes(query));
   $('coverage-count').textContent = `${rows.length} of ${coverage.features.length} capability families · Available = stated capability supported; Partial = limitations listed; Not available = backlog.`;
-  $('coverage-table').replaceChildren(makeTable(['Capability / JMeter reference', 'gmeter today', 'Coverage', 'Next stage'], rows.map(f => {
+  $('coverage-table').replaceChildren(makeTable(['Capability / JMeter reference', 'GoMeter today', 'Coverage', 'Next stage'], rows.map(f => {
     const name = node('div', f.name), link = node('a', f.group + ' ↗'); link.href = f.source; link.target = '_blank'; link.rel = 'noopener noreferrer'; name.append(link);
     return [name, f.detail, node('span', {available:'Available',partial:'Partial',missing:'Not available'}[f.status], 'coverage-status '+f.status), f.stage];
   })));
@@ -894,7 +894,7 @@ function openBuilderField(id) {
 for (const button of document.querySelectorAll('[data-guide-topic]')) button.addEventListener('click', () => openGuide(button.dataset.guideTopic));
 for (const button of document.querySelectorAll('[data-builder-target]')) button.addEventListener('click', () => openBuilderField(button.dataset.builderTarget));
 
-const welcomePreference = 'gmeter.welcome.dismissed.v1';
+const welcomePreference = 'gometer.welcome.dismissed.v1';
 function setWelcomeVisible(visible) {
   $('welcome-tip').hidden = !visible;
   try { if (visible) localStorage.removeItem(welcomePreference); else localStorage.setItem(welcomePreference, 'true'); }

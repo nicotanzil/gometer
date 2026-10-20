@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: gmeter-dashboard-data
+  name: gometer-dashboard-data
 spec:
   accessModes:
     - ReadWriteOnce
@@ -12,22 +12,22 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gmeter-dashboard
+  name: gometer-dashboard
   labels:
-    app.kubernetes.io/name: gmeter-dashboard
-    app.kubernetes.io/part-of: gmeter
+    app.kubernetes.io/name: gometer-dashboard
+    app.kubernetes.io/part-of: gometer
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app.kubernetes.io/name: gmeter-dashboard
+      app.kubernetes.io/name: gometer-dashboard
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: gmeter-dashboard
-        app.kubernetes.io/part-of: gmeter
+        app.kubernetes.io/name: gometer-dashboard
+        app.kubernetes.io/part-of: gometer
     spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
@@ -40,14 +40,14 @@ spec:
           type: RuntimeDefault
       containers:
         - name: dashboard
-          image: ghcr.io/replace-me/gmeter:0.5.0
+          image: ghcr.io/replace-me/gometer:0.6.0
           imagePullPolicy: IfNotPresent
           args:
             - ui
             - -listen
             - 0.0.0.0:8790
             - -public-origin
-            - https://gmeter.example.internal
+            - https://gometer.example.internal
             - -data
             - /data
           ports:
@@ -55,18 +55,18 @@ spec:
               containerPort: 8790
               protocol: TCP
           env:
-            - name: GMETER_WORKER_TOKEN
+            - name: GOMETER_WORKER_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: gmeter-worker-token
+                  name: gometer-worker-token
                   key: token
-            - name: GMETER_WORKER_CA
-              value: /etc/gmeter/worker-ca/ca.crt
+            - name: GOMETER_WORKER_CA
+              value: /etc/gometer/worker-ca/ca.crt
           volumeMounts:
             - name: data
               mountPath: /data
             - name: worker-ca
-              mountPath: /etc/gmeter/worker-ca
+              mountPath: /etc/gometer/worker-ca
               readOnly: true
           readinessProbe:
             tcpSocket:
@@ -92,10 +92,10 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: gmeter-dashboard-data
+            claimName: gometer-dashboard-data
         - name: worker-ca
           secret:
-            secretName: gmeter-worker-ca
+            secretName: gometer-worker-ca
             items:
               - key: ca.crt
                 path: ca.crt
@@ -103,14 +103,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: gmeter-dashboard
+  name: gometer-dashboard
   labels:
-    app.kubernetes.io/name: gmeter-dashboard
-    app.kubernetes.io/part-of: gmeter
+    app.kubernetes.io/name: gometer-dashboard
+    app.kubernetes.io/part-of: gometer
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/name: gmeter-dashboard
+    app.kubernetes.io/name: gometer-dashboard
   ports:
     - name: http
       port: 8790
@@ -120,21 +120,21 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: gmeter-dashboard-ingress-controller-only
+  name: gometer-dashboard-ingress-controller-only
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: gmeter-dashboard
+      app.kubernetes.io/name: gometer-dashboard
   policyTypes:
     - Ingress
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
-              gmeter-ingress-controller: "true"
+              gometer-ingress-controller: "true"
           podSelector:
             matchLabels:
-              gmeter-ingress-controller: "true"
+              gometer-ingress-controller: "true"
       ports:
         - protocol: TCP
           port: 8790

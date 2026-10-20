@@ -2,8 +2,8 @@
 NODE ?= node
 
 build:
-	go build -o bin/gmeter ./cmd/gmeter
-	go build -o bin/gmeter-demo ./cmd/gmeter-demo
+	go build -o bin/gometer ./cmd/gometer
+	go build -o bin/gometer-demo ./cmd/gometer-demo
 
 test: test-ui
 	go test -race ./...
@@ -25,7 +25,7 @@ check: test-ui
 	go test -race ./...
 
 demo:
-	go run ./cmd/gmeter-demo
+	go run ./cmd/gometer-demo
 
 clean:
 	rm -rf bin

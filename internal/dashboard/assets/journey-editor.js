@@ -2,8 +2,8 @@
 
 // A single editor module owns selection, draft errors, history, and diagram navigation.
 // Callers supply configuration reads/writes and the existing validate/save/run actions.
-globalThis.GmeterJourneyEditor = (() => {
-  const M = globalThis.GmeterJourneyModel;
+globalThis.GoMeterJourneyEditor = (() => {
+  const M = globalThis.GoMeterJourneyModel;
   let instance = 0;
   const el = (tag, text, cls) => { const n=document.createElement(tag); if(text!==undefined)n.textContent=text; if(cls)n.className=cls; return n; };
   function button(text, action, cls='je-button') { const n=el('button',text,cls); n.type='button'; n.addEventListener('click',action); const key={Validate:'Enter','Save scenario':'S','Start run':'Shift+Enter',Undo:'Z'}[text];if(key)n.setAttribute('aria-keyshortcuts',`Meta+${key} Control+${key}`);return n; }

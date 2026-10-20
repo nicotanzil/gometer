@@ -164,7 +164,7 @@ spacing, connection reuse, TLS, response consumption, and instrumentation
 comparable. Account for generator misses and the complete response body. Repeat
 runs and retain the test inputs and environment alongside results.
 
-No published benchmark in this repository establishes that gmeter is faster or
+No published benchmark in this repository establishes that GoMeter is faster or
 more accurate than JMeter. The [parity program](jmeter-parity.md) tracks functional
 coverage separately from performance evidence.
 

@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: gmeter-workers
+  name: gometer-workers
   labels:
-    app.kubernetes.io/name: gmeter-worker
-    app.kubernetes.io/part-of: gmeter
+    app.kubernetes.io/name: gometer-worker
+    app.kubernetes.io/part-of: gometer
 spec:
   clusterIP: None
   publishNotReadyAddresses: false
   selector:
-    app.kubernetes.io/name: gmeter-worker
+    app.kubernetes.io/name: gometer-worker
   ports:
     - name: control
       port: 8801
@@ -19,22 +19,22 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: gmeter-worker
+  name: gometer-worker
   labels:
-    app.kubernetes.io/name: gmeter-worker
-    app.kubernetes.io/part-of: gmeter
+    app.kubernetes.io/name: gometer-worker
+    app.kubernetes.io/part-of: gometer
 spec:
-  serviceName: gmeter-workers
+  serviceName: gometer-workers
   replicas: 3
   podManagementPolicy: Parallel
   selector:
     matchLabels:
-      app.kubernetes.io/name: gmeter-worker
+      app.kubernetes.io/name: gometer-worker
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: gmeter-worker
-        app.kubernetes.io/part-of: gmeter
+        app.kubernetes.io/name: gometer-worker
+        app.kubernetes.io/part-of: gometer
     spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
@@ -46,7 +46,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/replace-me/gmeter:0.5.0
+          image: ghcr.io/replace-me/gometer:0.6.0
           imagePullPolicy: IfNotPresent
           args:
             - worker
@@ -55,9 +55,9 @@ spec:
             - -name
             - $(POD_NAME)
             - -tls-cert
-            - /etc/gmeter/worker-tls/tls.crt
+            - /etc/gometer/worker-tls/tls.crt
             - -tls-key
-            - /etc/gmeter/worker-tls/tls.key
+            - /etc/gometer/worker-tls/tls.key
           ports:
             - name: control
               containerPort: 8801
@@ -67,14 +67,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: GMETER_WORKER_TOKEN
+            - name: GOMETER_WORKER_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: gmeter-worker-token
+                  name: gometer-worker-token
                   key: token
           volumeMounts:
             - name: worker-tls
-              mountPath: /etc/gmeter/worker-tls
+              mountPath: /etc/gometer/worker-tls
               readOnly: true
           readinessProbe:
             tcpSocket:
@@ -100,23 +100,23 @@ spec:
       volumes:
         - name: worker-tls
           secret:
-            secretName: gmeter-worker-tls
+            secretName: gometer-worker-tls
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: gmeter-workers-dashboard-only
+  name: gometer-workers-dashboard-only
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: gmeter-worker
+      app.kubernetes.io/name: gometer-worker
   policyTypes:
     - Ingress
   ingress:
     - from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: gmeter-dashboard
+              app.kubernetes.io/name: gometer-dashboard
       ports:
         - protocol: TCP
           port: 8801

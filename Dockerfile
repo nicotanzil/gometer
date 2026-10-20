@@ -8,14 +8,14 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 
-ARG VERSION=0.5.0-dev
+ARG VERSION=0.6.0-dev
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -trimpath \
-    -ldflags="-s -w -X gmeter/internal/cli.Version=${VERSION}" \
-    -o /out/gmeter ./cmd/gmeter
+    -ldflags="-s -w -X gometer/internal/cli.Version=${VERSION}" \
+    -o /out/gometer ./cmd/gometer
 
 FROM scratch
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=build --chown=65532:65532 /out/gmeter /gmeter
+COPY --from=build --chown=65532:65532 /out/gometer /gometer
 USER 65532:65532
-ENTRYPOINT ["/gmeter"]
+ENTRYPOINT ["/gometer"]

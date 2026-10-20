@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 type csvFlags struct{ path, scenario, sharing, eof, delimiter, columns *string }

@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"gmeter/internal/engine"
+	"gometer/internal/engine"
 )
 
 func TestFailurePolicyBundlesPreserveExecutionAndRejectMismatches(t *testing.T) {

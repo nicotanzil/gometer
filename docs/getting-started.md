@@ -10,33 +10,33 @@ does not start the demo or send test traffic.
 
 Prerequisites: a source checkout and Go 1.24 or newer. The Go module has no
 third-party dependencies. Make is optional; there is no frontend installation
-or asset build step. A compiled gmeter binary needs neither Go nor Node.js.
+or asset build step. A compiled GoMeter binary needs neither Go nor Node.js.
 
 From the repository root on macOS or Linux:
 
 ```sh
-go build -o bin/gmeter ./cmd/gmeter
-go build -o bin/gmeter-demo ./cmd/gmeter-demo
-./bin/gmeter version
+go build -o bin/gometer ./cmd/gometer
+go build -o bin/gometer-demo ./cmd/gometer-demo
+./bin/gometer version
 ```
 
 Or run `make build` to build both. On Windows, use PowerShell:
 
 ```powershell
-go build -o bin/gmeter.exe ./cmd/gmeter
-go build -o bin/gmeter-demo.exe ./cmd/gmeter-demo
-.\bin\gmeter.exe version
+go build -o bin/gometer.exe ./cmd/gometer
+go build -o bin/gometer-demo.exe ./cmd/gometer-demo
+.\bin\gometer.exe version
 ```
 
 The following shell examples use macOS/Linux paths. On Windows, invoke
-`.\bin\gmeter.exe` and `.\bin\gmeter-demo.exe` instead.
+`.\bin\gometer.exe` and `.\bin\gometer-demo.exe` instead.
 
 ## 2. Start a local target
 
 In a separate terminal, leave this process running:
 
 ```sh
-./bin/gmeter-demo
+./bin/gometer-demo
 ```
 
 The demo listens on `http://127.0.0.1:8787`. Its `/work` endpoint uses a bounded
@@ -48,7 +48,7 @@ These defaults explain the examples; they are not performance guarantees.
 In another terminal:
 
 ```sh
-./bin/gmeter ui
+./bin/gometer ui
 ```
 
 1. Open the printed URL, normally `http://127.0.0.1:8790`.
@@ -65,7 +65,7 @@ and zero allowed errors or missed arrivals. A healthy default demo normally
 completes all 10 requests and passes these checks. Scheduling and latency depend
 on your machine; read the actual result rather than assuming a pass.
 
-![First-test walkthrough in the gmeter app](images/user-guide.jpg)
+![First-test walkthrough in the GoMeter app](images/user-guide.jpg)
 
 ## 4. Understand and keep the result
 
@@ -94,8 +94,8 @@ Read [measurement definitions](measurements.md) for exact populations and units.
 Keep the demo running, then use a supplied configuration:
 
 ```sh
-./bin/gmeter validate -config examples/smoke.json
-./bin/gmeter run -config examples/smoke.json
+./bin/gometer validate -config examples/smoke.json
+./bin/gometer run -config examples/smoke.json
 ```
 
 This starter differs from the walkthrough: it offers 20 requests/s for 2 seconds,
@@ -105,7 +105,7 @@ It plans 40 arrivals. JSON and HTML report paths are printed after the run.
 For explicit artifact paths:
 
 ```sh
-./bin/gmeter run -config examples/smoke.json \
+./bin/gometer run -config examples/smoke.json \
   -out results/first-run.json -html results/first-run.html
 ```
 
@@ -116,8 +116,8 @@ retaining multiple runs. See [CLI reference](cli.md) for overrides and exit code
 
 | Symptom | Next step |
 | --- | --- |
-| Connection refused on port 8787 | Start `gmeter-demo` in another terminal and check its printed address |
-| Dashboard port is already in use | Reuse the existing dashboard or start `gmeter ui -listen 127.0.0.1:8791 -data work/another-workspace` |
+| Connection refused on port 8787 | Start `gometer-demo` in another terminal and check its printed address |
+| Dashboard port is already in use | Reuse the existing dashboard or start `gometer ui -listen 127.0.0.1:8791 -data work/another-workspace` |
 | The dashboard says to use its printed URL | Use the exact loopback IP and port; `localhost` is not interchangeable with `127.0.0.1` for its host check |
 | Validation passes but the run fails | Validation does not check reachability. Read the run's errors and individual acceptance checks |
 | The stress starter returns exit 1 | It deliberately overloads the default demo; failed error checks are expected |

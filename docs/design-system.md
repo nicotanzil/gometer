@@ -2,7 +2,7 @@
 
 The visual source is the supplied SmartCare Clinical AI HTML. Its clinical copy,
 marketing sections, routes, WebGL shader, and menu scripts are not application
-requirements. gmeter keeps its screens, content, configuration model, validation,
+requirements. GoMeter keeps its screens, content, configuration model, validation,
 journey coordinates, API routes, theme preferences, and execution behavior.
 
 ## Extracted source language
@@ -36,12 +36,12 @@ main container so the diagram and inspector have room; reports use 1240px.
 The original animation vocabulary also includes a 900ms menu curtain, 1s menu
 entries staggered by 70ms, a 140s ring rotation, a 22s HUD tilt, 5s fading ticks,
 2s pulse rings, animated chart dashes, and an offscreen-paused WebGL glow with a
-static fallback. These are decorative presentation examples. gmeter adopts the
+static fallback. These are decorative presentation examples. GoMeter adopts the
 interaction easing, button illumination, and static panel glow; continuous
 decoration is omitted to avoid adding load while measuring a system. The source's
 reduced-motion behavior is retained.
 
-The source is dark only. gmeter's Dark theme uses its exact palette; Light uses
+The source is dark only. GoMeter's Dark theme uses its exact palette; Light uses
 an inverse navy/blue palette with the same hierarchy, typography, and components.
 System still follows the operating system. Semantic status colors remain distinct
 from the blue action accent.

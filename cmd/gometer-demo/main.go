@@ -1,4 +1,4 @@
-// gmeter-demo is a bounded local target that rejects excess work with HTTP 503.
+// gometer-demo is a bounded local target that rejects excess work with HTTP 503.
 package main
 
 import (
@@ -16,7 +16,7 @@ import (
 	"syscall"
 	"time"
 
-	"gmeter/internal/diagnostics"
+	"gometer/internal/diagnostics"
 )
 
 func main() {
@@ -38,8 +38,8 @@ func main() {
 			fmt.Fprintf(w, "# TYPE process_cpu_seconds_total counter\nprocess_cpu_seconds_total %.9g\n", r.CPUSeconds)
 		}
 		fmt.Fprintf(w, "# TYPE go_memstats_heap_alloc_bytes gauge\ngo_memstats_heap_alloc_bytes %d\n# TYPE go_goroutines gauge\ngo_goroutines %d\n", r.HeapBytes, r.Goroutines)
-		fmt.Fprintf(w, "# TYPE gmeter_demo_active_work gauge\ngmeter_demo_active_work %d\n# TYPE gmeter_demo_work_capacity gauge\ngmeter_demo_work_capacity %d\n", len(slots), cap(slots))
-		fmt.Fprintf(w, "# TYPE gmeter_demo_work_requests_total counter\ngmeter_demo_work_requests_total{outcome=\"completed\"} %d\ngmeter_demo_work_requests_total{outcome=\"rejected\"} %d\ngmeter_demo_work_requests_total{outcome=\"canceled\"} %d\n", completed.Load(), rejected.Load(), canceled.Load())
+		fmt.Fprintf(w, "# TYPE gometer_demo_active_work gauge\ngometer_demo_active_work %d\n# TYPE gometer_demo_work_capacity gauge\ngometer_demo_work_capacity %d\n", len(slots), cap(slots))
+		fmt.Fprintf(w, "# TYPE gometer_demo_work_requests_total counter\ngometer_demo_work_requests_total{outcome=\"completed\"} %d\ngometer_demo_work_requests_total{outcome=\"rejected\"} %d\ngometer_demo_work_requests_total{outcome=\"canceled\"} %d\n", completed.Load(), rejected.Load(), canceled.Load())
 	})
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprintln(w, "ok") })
 	mux.HandleFunc("POST /login", func(w http.ResponseWriter, r *http.Request) {
@@ -51,13 +51,13 @@ func main() {
 			return
 		}
 		token := base64.RawURLEncoding.EncodeToString([]byte(input.Username))
-		http.SetCookie(w, &http.Cookie{Name: "gmeter_session", Value: token, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode})
+		http.SetCookie(w, &http.Cookie{Name: "gometer_session", Value: token, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode})
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Demo-Session", token)
 		json.NewEncoder(w).Encode(map[string]any{"token": token, "user": map[string]string{"id": input.Username}})
 	})
 	authenticated := func(w http.ResponseWriter, r *http.Request) (string, bool) {
-		cookie, err := r.Cookie("gmeter_session")
+		cookie, err := r.Cookie("gometer_session")
 		if err != nil || cookie.Value == "" || r.Header.Get("Authorization") != "Bearer "+cookie.Value {
 			http.Error(w, "session cookie and bearer token required", 401)
 			return "", false

@@ -3,7 +3,7 @@ package engine
 import (
 	"fmt"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 // ValidateIterations checks the stopping contract without trusting imported totals.

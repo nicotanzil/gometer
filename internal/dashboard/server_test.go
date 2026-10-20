@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 func testServer(t *testing.T) *Server {
@@ -28,7 +28,7 @@ func testServer(t *testing.T) *Server {
 }
 func request(s *Server, method, path, body string) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(method, "http://"+s.host+path, strings.NewReader(body))
-	r.Header.Set("X-Gmeter-Token", s.token)
+	r.Header.Set("X-Gometer-Token", s.token)
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	s.ServeHTTP(w, r)
@@ -73,7 +73,7 @@ func TestBrowserBoundaryAndStrictValidation(t *testing.T) {
 		r := httptest.NewRequest("POST", "http://"+s.host+"/api/runs", strings.NewReader(fmt.Sprintf(`{"url":%q}`, target.URL)))
 		r.Host = tc.host
 		r.Header.Set("Origin", tc.origin)
-		r.Header.Set("X-Gmeter-Token", tc.token)
+		r.Header.Set("X-Gometer-Token", tc.token)
 		r.Header.Set("Sec-Fetch-Site", tc.site)
 		w := httptest.NewRecorder()
 		s.ServeHTTP(w, r)
@@ -94,13 +94,18 @@ func TestBrowserBoundaryAndStrictValidation(t *testing.T) {
 	if requests.Load() != 0 {
 		t.Fatal("validation or rejected input sent traffic")
 	}
-	for _, path := range []string{"/", "/app.js", "/style.css", "/theme.js", "/theme.css", "/fonts.css", "/journey-model.js", "/journey-editor.js", "/journey.css", "/csv.js", "/csv.css", "/shortcuts.js", "/shortcuts.css", "/IBMPlexSans-Regular.woff2", "/IBMPlexMono-Regular.woff2", "/BricolageGrotesque-Latin.woff2", "/BricolageGrotesque-LatinExt.woff2", "/HankenGrotesk-Latin.woff2", "/HankenGrotesk-LatinExt.woff2"} {
+	for _, path := range []string{"/", "/app.js", "/style.css", "/theme.js", "/theme.css", "/fonts.css", "/gometer-mark.svg", "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png", "/journey-model.js", "/journey-editor.js", "/journey.css", "/csv.js", "/csv.css", "/shortcuts.js", "/shortcuts.css", "/IBMPlexSans-Regular.woff2", "/IBMPlexMono-Regular.woff2", "/BricolageGrotesque-Latin.woff2", "/BricolageGrotesque-LatinExt.woff2", "/HankenGrotesk-Latin.woff2", "/HankenGrotesk-LatinExt.woff2"} {
 		w = request(s, "GET", path, "")
 		if w.Code != 200 || w.Body.Len() == 0 {
 			t.Fatalf("asset %s: %d %s", path, w.Code, w.Body)
 		}
 		if strings.HasSuffix(path, ".woff2") && w.Header().Get("Content-Type") != "font/woff2" {
 			t.Fatalf("font %s content type: %s", path, w.Header().Get("Content-Type"))
+		}
+		for extension, kind := range map[string]string{".svg": "image/svg+xml", ".ico": "image/x-icon", ".png": "image/png"} {
+			if strings.HasSuffix(path, extension) && w.Header().Get("Content-Type") != kind {
+				t.Fatalf("brand asset %s content type: %s", path, w.Header().Get("Content-Type"))
+			}
 		}
 		if !strings.Contains(w.Header().Get("Content-Security-Policy"), "frame-ancestors 'none'") {
 			t.Fatal("missing CSP")
@@ -119,13 +124,13 @@ func TestBrowserBoundaryAndStrictValidation(t *testing.T) {
 }
 
 func TestRemoteDashboardRequiresExactHTTPSOrigin(t *testing.T) {
-	for _, origin := range []string{"", "http://gmeter.example.test", "https://gmeter.example.test/app", "https://user@gmeter.example.test", "https://gmeter.example.test?next=/"} {
+	for _, origin := range []string{"", "http://gometer.example.test", "https://gometer.example.test/app", "https://user@gometer.example.test", "https://gometer.example.test?next=/"} {
 		if ln, err := Listen("0.0.0.0:8790", origin); err == nil {
 			ln.Close()
 			t.Fatalf("remote listener accepted origin %q", origin)
 		}
 	}
-	ln, err := Listen("0.0.0.0:0", "https://gmeter.example.test")
+	ln, err := Listen("0.0.0.0:0", "https://gometer.example.test")
 	if err != nil {
 		t.Fatalf("valid private HTTPS origin rejected: %v", err)
 	}
@@ -133,7 +138,7 @@ func TestRemoteDashboardRequiresExactHTTPSOrigin(t *testing.T) {
 }
 
 func TestPublicOriginProtectsDashboardHostOriginAndDownloadCookie(t *testing.T) {
-	const host = "gmeter.example.test"
+	const host = "gometer.example.test"
 	s, err := New(context.Background(), t.TempDir(), host, "https://"+host)
 	if err != nil {
 		t.Fatal(err)
@@ -147,8 +152,8 @@ func TestPublicOriginProtectsDashboardHostOriginAndDownloadCookie(t *testing.T) 
 		t.Fatalf("public origin request: %d %s", w.Code, w.Body)
 	}
 	cookie := w.Result().Cookies()[0]
-	if !cookie.Secure || !cookie.HttpOnly || cookie.Path != "/download/" {
-		t.Fatalf("download cookie lacks secure attributes: %+v", cookie)
+	if cookie.Name != "gometer-download" || !cookie.Secure || !cookie.HttpOnly || cookie.Path != "/download/" {
+		t.Fatalf("invalid dashboard download cookie: %+v", cookie)
 	}
 
 	for _, tc := range []struct{ host, origin string }{
@@ -158,7 +163,7 @@ func TestPublicOriginProtectsDashboardHostOriginAndDownloadCookie(t *testing.T) 
 		r := httptest.NewRequest("POST", "https://"+host+"/api/validate", strings.NewReader(`{}`))
 		r.Host = tc.host
 		r.Header.Set("Origin", tc.origin)
-		r.Header.Set("X-Gmeter-Token", s.token)
+		r.Header.Set("X-Gometer-Token", s.token)
 		w := httptest.NewRecorder()
 		s.ServeHTTP(w, r)
 		if w.Code != http.StatusForbidden {

@@ -2,7 +2,7 @@
 
 // Import state is isolated from the test builder. Only a server-validated,
 // explicitly saved scenario can cross into the executable editor.
-globalThis.GmeterJMX = (() => {
+globalThis.GoMeterJMX = (() => {
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const labels = {mapped:'Mapped',input:'Needs input',blocked:'Blocked',review:'Review',ignored:'Disabled',notice:'Notice'};
   const marks = {mapped:'✓',input:'!',blocked:'×',review:'!',ignored:'−',notice:'i'};
@@ -15,11 +15,11 @@ globalThis.GmeterJMX = (() => {
     function status() {
       if(report.blockers) return `<div class="jmx-banner blocked"><strong>${report.blockers} execution blocker${report.blockers===1?'':'s'}${report.missing_inputs?` · ${report.missing_inputs} missing propert${report.missing_inputs===1?'y':'ies'}`:''}</strong><p>You can inspect the plan and save a migration draft. A blocked plan cannot become a runnable scenario.</p></div>`;
       if(report.missing_inputs) return `<div class="jmx-banner input"><strong>Supply ${report.missing_inputs} required propert${report.missing_inputs===1?'y':'ies'}</strong><p>The importer does not read your JMeter properties, environment, or referenced files.</p></div>`;
-      if(!accept) return '<div class="jmx-banner review"><strong>Review gmeter runtime policies</strong><p>The supported structure is mapped. Review the execution limits and runtime differences before saving a scenario.</p></div>';
-      return '<div class="jmx-banner mapped"><strong>Ready to save as a gmeter scenario</strong><p>All required inputs are supplied, no execution blockers remain, and runtime policies are accepted.</p></div>';
+      if(!accept) return '<div class="jmx-banner review"><strong>Review GoMeter runtime policies</strong><p>The supported structure is mapped. Review the execution limits and runtime differences before saving a scenario.</p></div>';
+      return '<div class="jmx-banner mapped"><strong>Ready to save as a GoMeter scenario</strong><p>All required inputs are supplied, no execution blockers remain, and runtime policies are accepted.</p></div>';
     }
     function fileline() { return `<div class="jmx-fileline"><span class="jmx-fileicon">JMX</span><div><h2>${esc(filename)}</h2><p>JMeter ${esc(report.source_version||'version not recorded')} · ${esc(report.name)}</p></div><button class="text-button" type="button" data-jmx-action="choose">Change file</button></div>`; }
-    function runtime() { return `<label class="jmx-runtime"><input type="checkbox" data-jmx-runtime${accept?' checked':''}${busy?' disabled':''}><span>I accept the documented gmeter runtime policies for this conversion.</span></label>${(report.components.find(c=>c.id==='runtime')?.details||[]).map(text=>`<p class="helper">${esc(text)}</p>`).join('')}`; }
+    function runtime() { return `<label class="jmx-runtime"><input type="checkbox" data-jmx-runtime${accept?' checked':''}${busy?' disabled':''}><span>I accept the documented GoMeter runtime policies for this conversion.</span></label>${(report.components.find(c=>c.id==='runtime')?.details||[]).map(text=>`<p class="helper">${esc(text)}</p>`).join('')}`; }
     function detail() {
       const component=report.components.find(c=>c.id===selected)||report.components[0];
       if(!component) return '';
@@ -55,8 +55,8 @@ globalThis.GmeterJMX = (() => {
         if(step===2)footer=btn('Back to compatibility','review')+btn(report.ready?'Continue to save':'Continue as migration draft','finish',true,busy);
         if(step===3)footer=btn('Back to preview','preview');
       }
-      root.innerHTML=`<div class="page-heading"><div><div class="eyebrow">FROM JMETER TO GMETER</div><h1 tabindex="-1">Import your JMeter test</h1><p>Bring your existing plan into gmeter, with every conversion decision visible.</p></div><div class="heading-actions">${btn('Import guide','help')}${btn('Back to builder','close')}</div></div><ol class="jmx-steps" aria-label="JMX import progress">${['Choose file','Review compatibility','Preview journey','Save'].map((label,i)=>`<li><button type="button" data-jmx-step="${i}"${step===i?' aria-current="step"':''}${busy||(!report&&i>0)?' disabled':''}><span>${i<step?'✓':i+1}</span>${label}</button></li>`).join('')}</ol>${error?`<div class="validation bad" role="alert">${esc(error)}</div>`:''}${busy?'<p class="jmx-busy" role="status">Analyzing JMX locally…</p>':''}${content}<div class="jmx-footer"><span>No workload traffic is sent during import, preview, or saving.</span><div class="heading-actions">${footer}</div></div><div class="sr-only" role="status" aria-live="polite">${busy?'Analyzing JMX':error||done?'Import state updated.':report?`${report.blockers} blockers, ${report.missing_inputs} missing properties.`:'Choose a JMX file.'}</div>`;
-      if(step===2&&report?.ready&&!done) {previewEditor=GmeterJourneyEditor.create(root.querySelector('#jmx-native-preview'),{preview:true});previewEditor.load(report.config,true);previewEditor.show();}
+      root.innerHTML=`<div class="page-heading"><div><div class="eyebrow">FROM JMETER TO GOMETER</div><h1 tabindex="-1">Import your JMeter test</h1><p>Bring your existing plan into GoMeter, with every conversion decision visible.</p></div><div class="heading-actions">${btn('Import guide','help')}${btn('Back to builder','close')}</div></div><ol class="jmx-steps" aria-label="JMX import progress">${['Choose file','Review compatibility','Preview journey','Save'].map((label,i)=>`<li><button type="button" data-jmx-step="${i}"${step===i?' aria-current="step"':''}${busy||(!report&&i>0)?' disabled':''}><span>${i<step?'✓':i+1}</span>${label}</button></li>`).join('')}</ol>${error?`<div class="validation bad" role="alert">${esc(error)}</div>`:''}${busy?'<p class="jmx-busy" role="status">Analyzing JMX locally…</p>':''}${content}<div class="jmx-footer"><span>No workload traffic is sent during import, preview, or saving.</span><div class="heading-actions">${footer}</div></div><div class="sr-only" role="status" aria-live="polite">${busy?'Analyzing JMX':error||done?'Import state updated.':report?`${report.blockers} blockers, ${report.missing_inputs} missing properties.`:'Choose a JMX file.'}</div>`;
+      if(step===2&&report?.ready&&!done) {previewEditor=GoMeterJourneyEditor.create(root.querySelector('#jmx-native-preview'),{preview:true});previewEditor.load(report.config,true);previewEditor.show();}
     }
     async function analyze() {
       if(!source)return;

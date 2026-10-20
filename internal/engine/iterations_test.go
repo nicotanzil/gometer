@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"gmeter/internal/config"
+	"gometer/internal/config"
 )
 
 func finiteConfig(target string) config.Config {

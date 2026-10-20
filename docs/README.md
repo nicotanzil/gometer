@@ -1,4 +1,4 @@
-# gmeter documentation
+# GoMeter documentation
 
 [Project overview](../README.md)
 

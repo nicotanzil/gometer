@@ -7,7 +7,7 @@ one journey through the chosen scenario. A successful journey completes its sele
 recorded as skipped and send no requests. Users mode can instead continue later
 steps or stop the user; see [failure actions](configuration.md#failure-actions).
 
-Try `examples/journey.json` against `gmeter-demo`. It logs in with two different
+Try `examples/journey.json` against `gometer-demo`. It logs in with two different
 data rows, captures a token, keeps the session cookie, reads a profile, and
 checks out. The default run schedules **20 journeys**, resulting in **60 HTTP
 attempts** when all three steps succeed.
@@ -20,9 +20,9 @@ weights, and per-scenario pass criteria, with Advanced JSON available alongside 
 ```sh
 make build
 # Run in another terminal:
-./bin/gmeter-demo
-./bin/gmeter validate -config examples/journey.json
-./bin/gmeter run -config examples/journey.json
+./bin/gometer-demo
+./bin/gometer validate -config examples/journey.json
+./bin/gometer run -config examples/journey.json
 ```
 
 ## Scenario fields
@@ -233,13 +233,13 @@ request metrics and thresholds.
 ## Branches and loops
 
 Load **Branches and loops** in the dashboard or use `examples/flow.json` with
-`gmeter-demo`. Each of the 20 journeys logs in, visits its profile twice, then
+`gometer-demo`. Each of the 20 journeys logs in, visits its profile twice, then
 chooses a checkout path using its data row: **80 HTTP attempts** on a successful
 run. Conditions inside the loop distinguish the first and second visit.
 
 ```sh
-./bin/gmeter validate -config examples/flow.json
-./bin/gmeter run -config examples/flow.json
+./bin/gometer validate -config examples/flow.json
+./bin/gometer run -config examples/flow.json
 ```
 
 A node contains exactly one HTTP request, `if`, or `loop`. Controls accept a
