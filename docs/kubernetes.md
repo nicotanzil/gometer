@@ -81,7 +81,7 @@ write permission, then build from the repository root:
    ```sh
    docker buildx build --platform linux/amd64 \
      --build-arg VERSION=0.6.0 \
-     --tag ghcr.io/YOUR_GITHUB_USERNAME/gometer:0.6.0 \
+     --tag ghcr.io/nicotanzil/gometer:0.6.0 \
      --push .
    ```
 
@@ -90,12 +90,12 @@ write permission, then build from the repository root:
    architectures. For a private GHCR package, configure an image-pull Secret
    for the namespace and reference it from both pod specs.
 
-2. Edit both image fields in `k8s/base/dashboard.yaml` and
-   `k8s/base/workers.yaml` to the image you pushed. Change
-   `gometer.example.internal` in the dashboard arguments and
-   `k8s/f5-kic/ingress.yaml` to your actual HTTPS hostname. The default resource
-   requests and limits are starting points; measure capacity under your real
-   workloads before relying on them.
+2. The dashboard and worker manifests use
+   `ghcr.io/nicotanzil/gometer:0.6.0`. Change the image in both files if you
+   publish a different version. Change `gometer.example.internal` in the
+   dashboard arguments and `k8s/f5-kic/ingress.yaml` to your actual HTTPS
+   hostname. The default resource requests and limits are starting points;
+   measure capacity under your real workloads before relying on them.
 
 3. Replace `192.0.2.0/24` in `k8s/f5-kic/access-policy.yaml` with the source
    CIDR that the F5 controller sees for VPN clients. The documentation range
@@ -120,6 +120,12 @@ write permission, then build from the repository root:
    domain). `gometer-worker-ca` contains the CA that issued that worker
    certificate. If your cluster uses a different DNS domain, use it in the
    certificate and in each worker origin entered in the dashboard.
+
+   The image does not include a system CA bundle. The `gometer-worker-ca`
+   Secret only verifies dashboard-to-worker connections. Before workers test
+   HTTPS targets, provide a trust bundle containing the required public and
+   organization roots to the worker pods, or rebuild the image with that
+   bundle.
 
 5. Create the namespace and Secrets. Keep these files and token values out of
    Git:
