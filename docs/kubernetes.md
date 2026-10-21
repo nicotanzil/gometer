@@ -119,7 +119,21 @@ Startup variables are read when the process starts. A ConfigMap update does not
 replace the environment of a running container. See Kubernetes' guide to
 [container environment variables](https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/).
 
-## Build an image that supports these variables
+## Use a release image or build your own
+
+For tags created after the image-publishing workflow is merged, the Release
+action publishes `ghcr.io/nicotanzil/gometer:<version>` for Linux AMD64 and
+ARM64. For example, tag `v0.9.0` would publish `:0.9.0`; this is an example,
+not an announced release. The workflow runs source checks and publishes the
+image before creating the GitHub Release. A manual workflow run does not push
+an image. Check the tag's Release workflow before using its image, then replace
+the example image tags in the manifests with that version or its digest.
+
+The `v0.8.0` release predates automatic image publishing. If you need to deploy
+that source now, build and push it manually as below. If the `gometer` package
+already exists in GHCR from a manual push, grant `nicotanzil/gometer` **Write**
+access under the package's **Settings → Manage Actions access** before the first
+automated publish.
 
 The templates use `ghcr.io/nicotanzil/gometer:env-startup` as an example tag that
 you build and push from this source checkout. It is not a published release

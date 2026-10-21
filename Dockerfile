@@ -2,8 +2,8 @@
 FROM --platform=$BUILDPLATFORM golang:1.27.3-bookworm AS build
 
 WORKDIR /src
-ARG TARGETOS=linux
-ARG TARGETARCH=amd64
+ARG TARGETOS
+ARG TARGETARCH
 COPY . .
 
 ARG VERSION=0.8.0-dev
@@ -13,5 +13,6 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -o /out/gometer ./cmd/gometer
 
 FROM scratch
+LABEL org.opencontainers.image.source="https://github.com/nicotanzil/gometer"
 COPY --from=build /out/gometer /gometer
 ENTRYPOINT ["/gometer"]
