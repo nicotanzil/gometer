@@ -19,13 +19,23 @@ positional arguments.
 | `gometer ui [flags]` | Start the dashboard; loopback by default |
 | `gometer worker [flags]` | Start an authenticated rate-mode worker |
 
-Each command accepts `-help`. Build with `make build` or the Go commands in
+Each command accepts `-help`; startup options identify their environment variable.
+Build with `make build` or the Go commands in
 [getting started](getting-started.md).
 
 ## Configuration precedence
 
-A run starts with defaults, loads `-config` if supplied, and applies explicitly
-provided flags. Unspecified flags do not overwrite configured values.
+Application startup settings use this precedence: **explicit flag → environment
+variable → built-in default**. An explicitly empty flag or variable is still a
+value; settings that require a value reject it. Startup variables are
+command-specific, so the dashboard and worker can use different listen addresses.
+Shared credentials and CA settings retain the scopes listed in the environment
+table below.
+
+For `run` and `validate`, `-config` overrides `GOMETER_CONFIG`. A run starts with
+defaults, loads that file if selected, and applies explicitly provided workload
+flags. Unspecified flags do not overwrite configured values. Workload fields
+remain in JSON or flags; startup variables do not change saved scenarios.
 
 - `-rate` selects rate mode unless `-mode` is explicit, and removes configured
   phases. It sets workload arrivals/s: journeys/s when scenarios are present.
@@ -50,7 +60,7 @@ precedence over an unspecified flag.
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
-| `-config` | empty | Strict JSON configuration file |
+| `-config` | `GOMETER_CONFIG` or empty | Strict JSON configuration file |
 | `-csv` | empty | Embed a CSV file in an existing local users-mode journey; also available to `validate` |
 | `-csv-scenario` | only journey | Select the journey by name; required with multiple journeys |
 | `-csv-columns` | header names | JSON object mapping CSV headers to variables; an empty value ignores a column |
@@ -108,6 +118,9 @@ or an importable dashboard run bundle.
 | `worker` | `-tls-cert` | empty | PEM worker server certificate |
 | `worker` | `-tls-key` | empty | PEM private key for that certificate |
 
+Defaults in the table are built-in values; environment settings override them.
+See the [environment table](#environment) for the variable mapped to each flag.
+
 Each dashboard process needs its own data directory. Workers accept one reserved
 or active job at a time. See [dashboard](dashboard.md) and [workers](workers.md).
 
@@ -115,13 +128,44 @@ or active job at a time. See [dashboard](dashboard.md) and [workers](workers.md)
 
 | Variable | Read by | Purpose |
 | --- | --- | --- |
+| `GOMETER_UI_LISTEN` | Dashboard | `-listen`; default `127.0.0.1:8790` |
+| `GOMETER_UI_PUBLIC_ORIGIN` | Dashboard | `-public-origin`; default empty; exact HTTPS origin for a private ingress |
+| `GOMETER_UI_DATA` | Dashboard | `-data`; default `.gometer`; relative paths use the process working directory |
+| `GOMETER_WORKER_LISTEN` | Worker | `-listen`; default `127.0.0.1:8801` |
+| `GOMETER_WORKER_NAME` | Worker | `-name`; default hostname, or `worker` |
+| `GOMETER_WORKER_TLS_CERT` | Worker | `-tls-cert`; PEM server certificate path |
+| `GOMETER_WORKER_TLS_KEY` | Worker | `-tls-key`; PEM private key path |
+| `GOMETER_CONFIG` | Run, validate | `-config`; JSON workload configuration path |
 | `GOMETER_WORKER_TOKEN` | Worker, CLI coordinator, dashboard | Shared worker-control token; 32–512 printable ASCII characters without whitespace |
 | `GOMETER_WORKER_CA` | CLI coordinator, dashboard | Additional PEM CA file for worker HTTPS |
 | `GOMETER_TELEMETRY_TOKEN` | CLI, dashboard | Exporter bearer token when `bearer_auth` is enabled |
 | `GOMETER_TELEMETRY_CA` | CLI, dashboard | Additional PEM CA file for exporter HTTPS |
 | `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` | Workload transport | Go's standard proxy environment behavior |
 
-The dashboard captures credential/CA environment settings when it starts.
+Start the dashboard without configuration flags:
+
+```sh
+GOMETER_UI_LISTEN=127.0.0.1:8792 \
+GOMETER_UI_DATA=/path/to/private/workspace \
+./bin/gometer ui
+```
+
+Choose a configuration file once for validation and execution:
+
+```sh
+export GOMETER_CONFIG=examples/smoke.json
+./bin/gometer validate
+./bin/gometer run
+```
+
+Explicit flags win even when an environment value is invalid. Use `-config ''`
+to clear an inherited file selection for `run`; `validate` requires a nonempty
+configuration path. GoMeter reads process environment variables; it does not
+load `.env` files or expand shell variables inside their values. Existing
+listener, public-origin, and TLS checks also apply to environment settings.
+
+Startup environment settings are read when the command starts; changing them
+requires a restart. The dashboard also captures credential/CA settings at startup.
 Worker control and telemetry connect directly; workload proxy settings do not
 apply to them. Worker and telemetry tokens are not persisted in reports or
 configuration. Supplied workload credentials in headers/bodies are part of saved

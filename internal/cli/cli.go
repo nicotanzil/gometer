@@ -34,6 +34,8 @@ Usage:
   gometer run -config examples/smoke.json -workers http://127.0.0.1:8801,http://127.0.0.1:8802
   gometer version
 
+Startup flags override GOMETER_* environment settings.
+Run and validate accept GOMETER_CONFIG; -config overrides it.
 Run flags override configuration fields. Run 'gometer run -help' for flags.
 Results are saved as JSON and standalone HTML under results/ by default.
 Exit codes: 0 passed, 1 checks failed, 2 input/output error, 130 interrupted.
@@ -68,14 +70,14 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 func worker(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("worker", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	listen := fs.String("listen", "127.0.0.1:8801", "worker IP and port; non-loopback requires TLS")
+	listen := envString(fs, "listen", "GOMETER_WORKER_LISTEN", "127.0.0.1:8801", "worker IP and port; non-loopback requires TLS")
 	host, _ := os.Hostname()
 	if host == "" {
 		host = "worker"
 	}
-	name := fs.String("name", host, "worker display name")
-	cert := fs.String("tls-cert", "", "PEM server certificate for remote control")
-	key := fs.String("tls-key", "", "PEM private key for remote control")
+	name := envString(fs, "name", "GOMETER_WORKER_NAME", host, "worker display name")
+	cert := envString(fs, "tls-cert", "GOMETER_WORKER_TLS_CERT", "", "PEM server certificate for remote control")
+	key := envString(fs, "tls-key", "GOMETER_WORKER_TLS_KEY", "", "PEM private key for remote control")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return 0
@@ -96,9 +98,9 @@ func worker(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 func ui(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("ui", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	listen := fs.String("listen", "127.0.0.1:8790", "dashboard listen IP and port; non-loopback requires -public-origin")
-	publicOrigin := fs.String("public-origin", "", "exact HTTPS origin used by a trusted private ingress")
-	data := fs.String("data", ".gometer", "directory for saved scenarios and runs")
+	listen := envString(fs, "listen", "GOMETER_UI_LISTEN", "127.0.0.1:8790", "dashboard listen IP and port; non-loopback requires -public-origin")
+	publicOrigin := envString(fs, "public-origin", "GOMETER_UI_PUBLIC_ORIGIN", "", "exact HTTPS origin used by a trusted private ingress")
+	data := envString(fs, "data", "GOMETER_UI_DATA", ".gometer", "directory for saved scenarios and runs")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return 0
@@ -136,7 +138,7 @@ func load(path string) (config.Config, error) {
 func validate(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("validate", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	path := fs.String("config", "", "JSON scenario to validate")
+	path := envString(fs, "config", "GOMETER_CONFIG", "", "JSON scenario to validate")
 	csv := addCSVFlags(fs)
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
@@ -173,7 +175,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("run", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	d := config.Defaults()
-	path := fs.String("config", "", "JSON scenario file")
+	path := envString(fs, "config", "GOMETER_CONFIG", "", "JSON scenario file")
 	csv := addCSVFlags(fs)
 	url := fs.String("url", "", "target HTTP/HTTPS URL")
 	name := fs.String("name", d.Name, "test name")

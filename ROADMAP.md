@@ -668,3 +668,23 @@ CLI telemetry run, and a 4-request distributed run, all without errors. Evidence
 was renamed without changing its file contents; the review preview starts with
 a fresh temporary workspace at localhost:53440 and its demo at localhost:53441.
 The changes remain uncommitted.
+
+
+### Application environment settings (21 October 2026)
+
+- [x] Dashboard listen address, public origin, and workspace via `GOMETER_UI_*`.
+- [x] Worker listen address, display name, and TLS certificate/key paths via environment settings.
+- [x] Shared `GOMETER_CONFIG` file selection for `run` and `validate`.
+- [x] Explicit flags override environment settings, which override built-in defaults; empty values remain explicit overrides.
+- [x] Existing origin, authentication, and TLS validation retained; workload fields remain in JSON or explicit flags.
+- [x] CLI help and operator guides document the variables, precedence, and restart behavior. Released-image deployment templates retain their compatible flags.
+
+Validation: focused public-CLI and real dashboard/worker startup tests passed with
+race detection. These include workspace persistence after restart, authenticated
+worker control, verified TLS, invalid values, and flag overrides. The final
+`GOFLAGS=-p=1 make check build` passed, including 23 UI/model tests, vet, the full
+race suite, and both executables. All 233 local Markdown links resolved before
+this roadmap entry. A built-executable smoke check verified environment-only
+configuration selection and dashboard startup, documented workspace selection,
+HTTP serving, help output, and graceful shutdown. No cluster deployment was run.
+Standards review: 0 findings. Spec review: 0 findings.

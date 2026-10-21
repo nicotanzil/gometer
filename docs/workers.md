@@ -62,6 +62,22 @@ target must be reachable from every worker. A target on `127.0.0.1` refers to
 each worker's own machine. Multiple processes on one machine verify coordination;
 they are not a scaling benchmark.
 
+## Environment-based startup
+
+With the shared `GOMETER_WORKER_TOKEN` already set, worker options can be supplied
+without flags:
+
+```sh
+GOMETER_WORKER_LISTEN=127.0.0.1:8801 \
+GOMETER_WORKER_NAME=worker-1 \
+./bin/gometer worker
+```
+
+For HTTPS control, set `GOMETER_WORKER_TLS_CERT` and `GOMETER_WORKER_TLS_KEY` to
+PEM file paths. Remote listeners still require TLS and a valid shared token.
+Flags take precedence over environment settings, including explicit empty flags.
+See the complete [environment reference](cli.md#environment).
+
 ## Remote control
 
 Workers bind an explicit IP. Loopback is the default. Non-loopback listeners

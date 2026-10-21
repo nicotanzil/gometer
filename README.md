@@ -40,12 +40,24 @@ In another terminal, start the dashboard:
 ./bin/gometer ui
 ```
 
+You can also set startup options through environment variables:
+
+```sh
+GOMETER_UI_LISTEN=127.0.0.1:8792 \
+GOMETER_UI_DATA=work/environment-dashboard \
+./bin/gometer ui
+```
+
+Explicit flags override environment values. See the
+[environment reference](docs/cli.md#environment) for dashboard, worker, and
+configuration-file settings.
+
 Open the printed URL, normally **http://127.0.0.1:8790**, and select
 **User guide → Your first test**. Load the practice configuration, validate it,
 then select **Start run** to send traffic. Validation sends no workload traffic.
 
-Scenarios and history are saved in `.gometer/`. Use `-data` to select another
-workspace. See [Getting started](docs/getting-started.md) for a complete walkthrough.
+Scenarios and history default to `.gometer/`. Use `GOMETER_UI_DATA` or `-data`
+to select another workspace. See [Getting started](docs/getting-started.md) for a complete walkthrough.
 
 ### Run from the CLI
 

@@ -48,6 +48,14 @@ Missing worker results mean unknown traffic and fail completion checks.
 ./bin/gometer ui -listen 127.0.0.1:8790 -data /path/to/private/workspace
 ```
 
+A service manager can supply the same settings as `GOMETER_UI_LISTEN` and
+`GOMETER_UI_DATA`, leaving its command as `gometer ui`. Use
+`GOMETER_UI_PUBLIC_ORIGIN` for a trusted HTTPS ingress. Explicit flags override
+these variables; remove a flag when the environment should control that option.
+Settings are read at process startup, so restart the service after changing them.
+See [environment configuration](cli.md#environment) for all supported settings.
+
+
 Use one dashboard process per data directory. There is no cross-process workspace
 lock or coordination; sharing a directory can overwrite state or mark another
 process's in-progress records abandoned. The API allows one active run per

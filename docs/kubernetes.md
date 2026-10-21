@@ -47,6 +47,40 @@ Enter one origin per line in the dashboard's **Workers** field. GoMeter does not
 discover StatefulSet replicas. If the replica count changes, update the worker
 list as well. Distributed workers currently support rate mode only.
 
+## Configure startup through environment variables
+
+An image built from the source containing environment-based startup can use
+`args: ["ui"]` with these dashboard container settings:
+
+```yaml
+env:
+  - name: GOMETER_UI_LISTEN
+    value: "0.0.0.0:8790"
+  - name: GOMETER_UI_PUBLIC_ORIGIN
+    value: "https://gometer.example.internal"
+  - name: GOMETER_UI_DATA
+    value: "/data"
+```
+
+Retain the data volume mount, worker token Secret, and worker CA settings from
+the base template. Configuration can come from a ConfigMap via `envFrom` or
+`valueFrom`; tokens and private keys belong in Secrets. A worker can similarly
+use `args: ["worker"]` with `GOMETER_WORKER_LISTEN`, `GOMETER_WORKER_NAME`,
+`GOMETER_WORKER_TLS_CERT`, and `GOMETER_WORKER_TLS_KEY`. The two TLS variables are
+paths to mounted PEM files. To use the pod name, assign `GOMETER_WORKER_NAME`
+through the downward API with `fieldPath: metadata.name`.
+
+Flags take precedence, so remove the corresponding argument when an environment
+variable should control it. Update the pod template and roll out new pods after
+changing environment settings; a ConfigMap change does not update a running
+process's environment. The origin, authentication, and TLS requirements are the
+same with either configuration method.
+
+The checked-in templates retain flags for their released `0.6.0` image. That
+release does not support the new startup variables. Use an image built from this
+feature's source revision before converting those arguments to environment
+settings. This guide does not claim a cluster deployment has been verified.
+
 ## Access and recovery boundaries
 
 The origin check binds requests to the configured ingress host. It is not user
