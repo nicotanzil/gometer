@@ -323,8 +323,10 @@ func (w *Worker) execute(ctx context.Context, j *job) {
 	}
 }
 
-// Non-loopback listeners require TLS. There is no unauthenticated worker mode.
-func ServeWorker(ctx context.Context, address, name, token, cert, key string, output io.Writer) error {
+const PlaintextControlWarning = "Worker control uses plain HTTP: the worker token and test configuration travel without application TLS."
+
+// Non-loopback HTTP listeners require operator opt-in. All listeners require a token.
+func ServeWorker(ctx context.Context, address, name, token, cert, key string, allowHTTP bool, output io.Writer) error {
 	if err := ValidToken(token); err != nil {
 		return err
 	}
@@ -336,8 +338,11 @@ func ServeWorker(ctx context.Context, address, name, token, cert, key string, ou
 	if ip == nil {
 		return fmt.Errorf("worker listen address must use an explicit IP")
 	}
-	if (cert == "") != (key == "") || (!ip.IsLoopback() && cert == "") {
-		return fmt.Errorf("non-loopback workers require -tls-cert and -tls-key")
+	if (cert == "") != (key == "") {
+		return fmt.Errorf("worker TLS settings require -tls-cert and -tls-key together")
+	}
+	if !ip.IsLoopback() && cert == "" && !allowHTTP {
+		return fmt.Errorf("non-loopback workers require -tls-cert and -tls-key, or explicit -allow-http (GOMETER_WORKER_ALLOW_HTTP=true)")
 	}
 	if cert != "" {
 		if _, err := tls.LoadX509KeyPair(cert, key); err != nil {
@@ -358,6 +363,9 @@ func ServeWorker(ctx context.Context, address, name, token, cert, key string, ou
 	scheme := "http"
 	if cert != "" {
 		scheme = "https"
+	}
+	if scheme == "http" && !ip.IsLoopback() {
+		fmt.Fprintln(output, "WARNING:", PlaintextControlWarning)
 	}
 	fmt.Fprintf(output, "GoMeter worker %s: %s://%s\n", name, scheme, listener.Addr())
 	done := make(chan error, 1)

@@ -45,6 +45,7 @@ async function main() {
     page.on('response',r=>{if(r.status()>=400)failedResponses.push([new URL(r.url()).pathname,r.status()]);});
     page.on('request',r=>{if(r.method()==='POST')apiWrites.push(new URL(r.url()).pathname);});
     await page.goto(url); await page.waitForFunction(()=>document.querySelector('#config-json').value.includes('"url"'));
+    await require('./navigation-browser.cjs')(page);
     const canvas=page.locator('#journey-canvas');
     const config = JSON.parse(fs.readFileSync(path.join(repo,'examples/journey.json'),'utf8'));
     config.url=`http://127.0.0.1:${target.address().port}`;
@@ -118,6 +119,9 @@ async function main() {
     await page.locator('#builder-settings-tab').click();await page.locator('#builder-journey-tab').click();
     assert.equal(apiWrites.length,beforeInvalidActions,'Unfinished drafts cannot validate, save, or start a serialized older test.');
     assert.equal(await canvas.getByLabel('Dataset rows · JSON',{exact:true}).inputValue(),'{unfinished');
+    await page.locator('#sidebar-toggle').click();
+    assert.equal(await canvas.getByLabel('Dataset rows · JSON',{exact:true}).inputValue(),'{unfinished','Collapsing navigation discarded the inspector draft.');
+    await page.locator('#sidebar-toggle').click();
     await edit('Dataset rows · JSON',JSON.stringify(config.scenarios[0].data));
     await edit('Mix weight','3');
     assert.equal((await read()).scenarios[0].weight,3);
@@ -192,10 +196,12 @@ async function main() {
     assert.match(await page.locator('#run-journey-canvas .je-inspector').innerText(),/Condition false: 2/);
     await page.locator('#run-journey-canvas .je-outline-step').filter({hasText:'Coffee checkout'}).click();
     assert.match(await page.locator('#run-journey-canvas .je-inspector').innerText(),/Skipped by condition/);
+    await require('./workspace-browser.cjs')(page);
+    assert.equal(attempts,88,'Navigation, comparison, JMX review and CSV preview must not send workload traffic.');
     assert.deepEqual(errors,[]);
     assert.equal(failedResponses.filter(([p,s])=>p==='/api/validate'&&s===400).length,1);
     assert.deepEqual(failedResponses.filter(([p,s])=>!(p==='/api/validate'&&s===400)&&!(p==='/favicon.ico'&&s===404)),[]);
-    console.log('Journey browser integration passed: editing, drafts, dependencies, save/reload, XSS, six widths, 20 successful and 20 failed journeys, exact target counts, and nested branch/loop editing and execution.');
+    console.log('Browser integration passed: navigation/focus/themes, editing/drafts/dependencies, save/reload, XSS, six widths, counted journeys, nested branches/loops, history comparison, Guide/Coverage, JMX review and CSV dialog.');
   } finally {
     if(browser)await browser.close();
     if(dashboard&&dashboard.exitCode===null){dashboard.kill('SIGTERM');await new Promise(resolve=>dashboard.once('exit',resolve));}

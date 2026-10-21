@@ -93,7 +93,7 @@ func TestJMXGuidedImportPersistenceAndNoTraffic(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatal(w.Body.String())
 	}
-	reloaded, err := New(context.Background(), s.store.dir, s.host, s.origin)
+	reloaded, err := New(context.Background(), s.store.dir, s.host, s.origin, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

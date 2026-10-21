@@ -1,0 +1,65 @@
+/* Workspace chrome. The icon rail changes available width, never editor state. */
+:root{--sidebar-width:196px}
+html[data-sidebar=collapsed]{--sidebar-width:60px}
+.skip-link{position:fixed;top:8px;left:8px;z-index:200;background:var(--panel);border:1px solid var(--signal);padding:8px 12px;border-radius:4px;transform:translateY(-160%)}
+.skip-link:focus{transform:none}
+.sidebar{position:fixed;inset:0 auto 0 0;width:var(--sidebar-width);height:100dvh;padding:20px 12px 14px;display:flex;flex-direction:column;gap:0;background:var(--nav);border-right:1px solid var(--line);z-index:60;overflow-y:auto;overflow-x:hidden}
+.sidebar-header{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:32px}
+.sidebar .brand{padding:0;gap:8px;font-family:var(--font-sans);font-size:18px;font-weight:600;letter-spacing:-.5px}
+.sidebar .brand-mark{width:24px;height:24px;min-width:24px;flex-basis:24px}
+.nav-icon{width:18px;height:18px;flex:0 0 18px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
+.shell-icon-button{display:inline-flex;align-items:center;justify-content:center;width:30px;height:32px;flex:0 0 30px;padding:4px;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--text-2)}
+.shell-icon-button:hover{background:var(--surface-3);color:var(--ink)}
+.sidebar .nav-label{margin:28px 10px 10px;font:500 10px/1.5 var(--font-sans);letter-spacing:.06em}
+.sidebar nav{display:flex;flex-direction:column;gap:3px;margin:0;position:static;overflow:visible}
+.sidebar .nav{position:relative;display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-height:36px;padding:7px 10px;margin:0;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--text-2);font:500 12px/1.5 var(--font-sans);text-align:left;white-space:nowrap;transition:none}
+.sidebar .nav:hover{background:var(--surface-3);color:var(--ink)}
+.sidebar .nav.active{color:var(--signal);background:var(--signal-soft);border-color:transparent}
+.sidebar .nav .nav-label-text{width:auto;font-size:12px}
+.sidebar .nav .dot{position:absolute;right:9px;margin:0;background:var(--ok);box-shadow:none}
+.sidebar .shortcut-trigger{margin-top:auto;border:0;background:transparent;min-height:36px}
+.sidebar .shortcut-trigger kbd{padding:0 3px;font-size:10px;border:1px solid var(--line-2);border-radius:3px;box-shadow:none;margin-left:auto}
+.sidebar-bottom{display:flex;align-items:center;gap:6px;margin:16px 8px 0;padding:12px 0 0;border-top:1px solid var(--line);font:11px/1.5 var(--font-sans);color:var(--muted)}
+.local-indicator{box-shadow:none;background:var(--ok);flex:0 0 6px;margin:0}
+main{margin-left:var(--sidebar-width);max-width:none;min-width:0;padding:0 28px}
+.topbar{height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px;font:12px/1.5 var(--font-sans);color:var(--text-2)}
+.workspace-context,.workspace-tools{display:flex;align-items:center;gap:12px;min-width:0}
+.workspace-context strong{font-weight:500;color:var(--ink)}
+.context-separator{color:var(--line-2)}
+.workspace-tools{flex-shrink:0}
+.workspace-status{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.topbar .theme-picker{position:static;display:flex;align-items:center;gap:7px;margin:0;padding:0;border:0}
+.topbar .theme-picker label{margin:0;font-size:11px;font-weight:400}
+.topbar .theme-picker select{width:82px;min-height:30px;margin:0;padding:4px 7px;border:1px solid var(--line-2);border-radius:4px;background:var(--panel);font-size:12px;color:var(--text-2)}
+#navigation-open{display:none}
+.navigation-tooltip{position:fixed;z-index:150;max-width:220px;border:1px solid var(--line-2);border-radius:4px;padding:6px 9px;background:var(--ink);color:var(--panel);font-size:12px;line-height:1.4;pointer-events:none;box-shadow:0 3px 12px #0001}
+@media(min-width:901px){
+  html[data-sidebar=collapsed] .sidebar{padding-inline:8px}
+  html[data-sidebar=collapsed] .sidebar-header{flex-direction:column;gap:12px}
+  html[data-sidebar=collapsed] .sidebar .nav-label-text,html[data-sidebar=collapsed] .sidebar .nav-label,html[data-sidebar=collapsed] .sidebar kbd{display:none}
+  html[data-sidebar=collapsed] .sidebar nav{margin-top:18px}
+  html[data-sidebar=collapsed] .sidebar .nav{justify-content:center;padding:8px 0;min-height:38px}
+  html[data-sidebar=collapsed] .sidebar .nav .dot{right:3px;top:5px}
+  html[data-sidebar=collapsed] .sidebar-bottom{justify-content:center;margin-inline:0}
+}
+@media(max-width:900px){
+  main{margin-left:0;padding:0 20px}
+  .sidebar{width:min(280px,calc(100vw - 40px));padding:18px 14px;transform:translateX(-100%);visibility:hidden;z-index:100;background:var(--panel)}
+  html[data-navigation-open=true] .sidebar{transform:none;visibility:visible}
+  html[data-navigation-open=true]{overflow:hidden}
+  #navigation-backdrop{position:fixed;inset:0;z-index:90;background:#10182866}
+  #navigation-open{display:inline-flex}
+  .sidebar .nav-label-text,.sidebar .nav-icon{display:inline-block}
+  .sidebar .nav{min-height:42px;font-size:13px}
+  .sidebar .nav .nav-label-text{font-size:13px}
+  .sidebar .shortcut-trigger{display:flex}
+  .sidebar .nav-label,.sidebar-bottom{display:flex}
+  .workspace-context,.workspace-tools{gap:8px}
+}
+@media(max-width:540px){
+  main{padding-inline:14px}
+  .topbar{height:52px;gap:8px}
+  .context-workspace,.context-separator,.workspace-status,.topbar .theme-picker label{display:none}
+  .topbar .theme-picker select{width:78px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.sidebar,.skip-link{transition:none}}

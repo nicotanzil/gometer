@@ -73,8 +73,7 @@ function showView(next) {
     e.classList.toggle('active', selected);
     if (selected) e.setAttribute('aria-current', 'page'); else e.removeAttribute('aria-current');
   }
-  $('nav-more').classList.toggle('active', next === 'guide' || next === 'coverage');
-  $('nav-more').open = false;
+  document.dispatchEvent(new CustomEvent('gometer:viewchange', {detail: next}));
   window.scrollTo(0, 0);
   if (next === 'history') refresh().catch(e => notice(e.message, true));
   if (next === 'live' && current) requestAnimationFrame(drawCharts);
@@ -83,8 +82,6 @@ function showView(next) {
   if (next === 'jmx') jmxImport.show();
 }
 for (const e of document.querySelectorAll('[data-view]')) e.addEventListener('click', () => showView(e.dataset.view));
-document.addEventListener('click', e => { if (!$('nav-more').contains(e.target)) $('nav-more').open = false; });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') $('nav-more').open = false; });
 function startBuilderRun() {
   if (activeID || $('start').disabled) { notice('A run is already active or starting. Stop it or wait for it to finish.', true); return; }
   if (!$('config-form').checkValidity()) { showBuilderTab('settings'); $('config-form').reportValidity(); return; }
@@ -319,7 +316,9 @@ function updateInlineHints() {
     input.setAttribute('aria-invalid', String(!!message));
   }
 }
+function hasHTTPWorkers(workers) { return (workers || []).some(url => /^http:/i.test(url)); }
 function updatePreview(c) {
+  $('worker-control-warning').hidden = !hasHTTPWorkers(c.workers);
   $('phase-summary').replaceChildren(...(c.stages || []).map(s => node('span', `${s.name || 'Phase'} · ${s.rate}/s · ${s.duration}`, 'phase-chip')));
   const csvEOF = c.scenarios?.some(s=>s.csv?.on_eof==='stop_user');
   const journey = !!c.scenarios?.length, unit = journey ? 'journeys' : 'requests';
@@ -511,9 +510,9 @@ function renderRun() {
   const journeys = run.workload === 'journeys', traffic = journeys ? j : r;
   $('live-empty').hidden = true; $('run-content').hidden = false;
   $('run-title').textContent = run.name || 'HTTP test'; $('run-target').textContent = run.config.url;
-  $('live-eyebrow').textContent = `${run.workload.toUpperCase()} WORKLOAD · ${run.config.mode.toUpperCase()} MODE`;
-  if (run.imported) $('live-eyebrow').textContent += ' · IMPORTED';
-  if (run.config.workers?.length) $('live-eyebrow').textContent += ` · ${run.config.workers.length} WORKERS`;
+  $('live-eyebrow').textContent = `${journeys ? 'Journeys' : 'Requests'} · ${run.config.mode === 'rate' ? 'Arrival rate' : 'Concurrent users'}`;
+  if (run.imported) $('live-eyebrow').textContent += ' · Imported';
+  if (run.config.workers?.length) $('live-eyebrow').textContent += ` · ${run.config.workers.length} workers`;
   $('run-tls-warning').hidden = !run.config.insecure;
   $('run-status').textContent = run.status.toUpperCase(); $('run-status').className = 'status ' + run.status;
   $('stop').hidden = !activeID || run.id !== activeID; $('stop').disabled = run.status === 'stopping';
@@ -600,6 +599,7 @@ $('telemetry-series').addEventListener('change',()=>requestAnimationFrame(drawCh
 function renderWorkers(run,latest) {
   const urls=run.config.workers||[], distribution=run.result?.distribution;
   $('workers-panel').hidden=!urls.length;
+  $('workers-plaintext-warning').hidden=!hasHTTPWorkers(urls);
   if (!urls.length) return;
   const finished=!!run.result;
   $('workers-state').textContent=distribution ? (distribution.complete?'COMPLETE':'INCOMPLETE') : (latest.workers?.length?'COORDINATING':'PREPARING');
@@ -611,7 +611,7 @@ function renderWorkers(run,latest) {
     const known=!finished || ['finished','interrupted'].includes(w?.status);
     const cpu=w?.generator?.cpu_available ? fmt(w.generator.average_cpu_percent)+'%' : '—';
     const heap=w?.generator ? fmt(w.generator.peak_heap_bytes/1048576)+' MiB' : '—';
-    const label=node('div',`${index+1}. ${w?.name||url}`); if (w) label.append(node('div',w.url,'helper'));
+    const label=node('div',`${index+1}. ${w?.name||url}`); if (w) label.append(node('div',w.url,'helper')); if (hasHTTPWorkers([url])) label.append(node('div','HTTP · plaintext control','helper'));
     return [label,w?.status||point?.status||'preparing',w ? count(w.planned_arrivals) : '—',known ? count(a?.scheduled??point?.scheduled) : 'Unknown',known ? count(w?.requests.completed??point?.http_completed) : 'Unknown',cpu,heap];
   });
   $('workers-table').replaceChildren(makeTable(['Worker','Status','Assigned arrivals','Reported arrivals','HTTP completed','CPU avg','Heap peak'],rows));
@@ -789,6 +789,7 @@ function drawTelemetryChart() {
   drawChart('telemetry-chart',[{points:values,color:colors.blue}],end,null,points[0]?.elapsed_seconds||0,true);
 }
 window.addEventListener('resize', () => requestAnimationFrame(drawCharts));
+window.addEventListener('gometer:layoutchange', () => { if (view === 'live') requestAnimationFrame(drawCharts); });
 
 function makeTable(headers, rows) {
   const table = node('table'), head = node('thead'), body = node('tbody'), tr = node('tr'); tr.append(...headers.map(t => node('th', t))); head.append(tr);

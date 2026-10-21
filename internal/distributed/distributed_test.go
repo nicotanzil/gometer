@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -65,7 +66,7 @@ func TestWorkerReservationExpiryAndBrowserOriginBoundary(t *testing.T) {
 	if out.Code != 403 {
 		t.Fatal("browser-origin worker control allowed")
 	}
-	if err := ServeWorker(context.Background(), "0.0.0.0:0", "A", testToken, "", "", io.Discard); err == nil {
+	if err := ServeWorker(context.Background(), "0.0.0.0:0", "A", testToken, "", "", false, io.Discard); err == nil {
 		t.Fatal("plaintext remote worker listener allowed")
 	}
 }
@@ -349,11 +350,14 @@ func TestWorkerTLSAndRedirectsDoNotLeakAuthentication(t *testing.T) {
 	c.Duration = "50ms"
 	c.MaxInFlight = 1
 	c.Insecure = true // Workload TLS opt-in never disables worker verification.
-	if _, err := Run(context.Background(), c, testOptions()); err == nil {
+	untrusted := testOptions()
+	untrusted.AllowHTTPWorkers = true // HTTP opt-in must not weaken HTTPS verification.
+	if _, err := Run(context.Background(), c, untrusted); err == nil {
 		t.Fatal("untrusted TLS certificate accepted")
 	}
 	opts := testOptions()
 	opts.Client = s.Client()
+	opts.AllowHTTPWorkers = true
 	r, err := Run(context.Background(), c, opts)
 	if err != nil || !r.Passed {
 		t.Fatalf("trusted worker TLS: %v %+v", err, r)
@@ -375,5 +379,30 @@ func TestInsecureWorkloadRunsOnWorker(t *testing.T) {
 	r, err := Run(context.Background(), c, testOptions())
 	if err != nil || !r.Passed || !r.Insecure || !r.Distribution.Complete || r.Completed != 1 {
 		t.Fatalf("insecure worker workload: %v %+v", err, r)
+	}
+}
+
+func TestCoordinatorEnforcesHTTPPermissionBeforeContactingWorkers(t *testing.T) {
+	worker, err := NewWorker(context.Background(), "HTTP", testToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer worker.Close()
+	var control, workload atomic.Int64
+	fixture := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { control.Add(1); worker.ServeHTTP(w, r) }))
+	defer fixture.Close()
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { workload.Add(1); fmt.Fprint(w, "ok") }))
+	defer target.Close()
+	parsed, _ := url.Parse(fixture.URL)
+	c := rateConfig(target.URL, "http://localhost:"+parsed.Port())
+	c.Duration, c.Rate = "250ms", 4
+	if _, err := Run(context.Background(), c, testOptions()); err == nil || control.Load() != 0 || workload.Load() != 0 {
+		t.Fatalf("default policy sent traffic: %v control=%d workload=%d", err, control.Load(), workload.Load())
+	}
+	opts := testOptions()
+	opts.AllowHTTPWorkers = true
+	result, err := Run(context.Background(), c, opts)
+	if err != nil || !result.Passed || workload.Load() != 1 {
+		t.Fatalf("explicit HTTP permission: %v result=%+v requests=%d", err, result, workload.Load())
 	}
 }

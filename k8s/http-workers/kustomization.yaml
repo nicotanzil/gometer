@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Optional plaintext control. Both processes opt in; authentication stays required.
+# Build this example image from current source before applying the overlay.
+resources:
+  - ../base
+
+images:
+  - name: ghcr.io/nicotanzil/gometer
+    newTag: http-workers
+
+patches:
+  - path: dashboard.yaml
+  - path: workers.yaml

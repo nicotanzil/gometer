@@ -42,6 +42,23 @@ persistence. Force termination can lose final results. Worker jobs are held in
 memory, and traffic is never automatically reassigned or replayed after failure.
 Missing worker results mean unknown traffic and fail completion checks.
 
+## Worker transport settings
+
+Use verified HTTPS for remote workers by default. Optional plaintext control
+requires `GOMETER_WORKER_ALLOW_HTTP=true` on workers and
+`GOMETER_ALLOW_HTTP_WORKERS=true` on the dashboard/CLI coordinator, with the same
+shared worker token on both sides. These are startup settings; saved tests and
+imports cannot grant permission. Both processes warn that the token and test
+configuration travel without application TLS. Record that transport choice with
+the experiment and restrict the network accordingly.
+
+Restart between runs to change these settings. To return to HTTPS, configure a
+valid worker certificate/key pair and coordinator CA trust, change each worker
+origin to `https://`, and remove both opt-ins (or set their flags to false).
+A bad certificate/key pair fails startup; HTTPS requests never downgrade to HTTP.
+See [worker setup](workers.md#optional-remote-http-control) and the
+[optional Kubernetes overlay](kubernetes.md#optional-http-worker-fleet).
+
 ## Workspace ownership and retention
 
 ```sh

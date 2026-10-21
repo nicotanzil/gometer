@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gometer-dashboard
+spec:
+  template:
+    spec:
+      containers:
+        - name: dashboard
+          env:
+            - name: GOMETER_ALLOW_HTTP_WORKERS
+              value: "true"
+            - name: GOMETER_WORKER_CA
+              $patch: delete
+          volumeMounts:
+            - name: worker-ca
+              $patch: delete
+      volumes:
+        - name: worker-ca
+          $patch: delete

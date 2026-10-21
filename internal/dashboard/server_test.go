@@ -19,7 +19,7 @@ import (
 
 func testServer(t *testing.T) *Server {
 	t.Helper()
-	s, err := New(context.Background(), t.TempDir(), "127.0.0.1:8790", "http://127.0.0.1:8790")
+	s, err := New(context.Background(), t.TempDir(), "127.0.0.1:8790", "http://127.0.0.1:8790", Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +139,7 @@ func TestRemoteDashboardRequiresExactHTTPSOrigin(t *testing.T) {
 
 func TestPublicOriginProtectsDashboardHostOriginAndDownloadCookie(t *testing.T) {
 	const host = "gometer.example.test"
-	s, err := New(context.Background(), t.TempDir(), host, "https://"+host)
+	s, err := New(context.Background(), t.TempDir(), host, "https://"+host, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,7 +274,7 @@ func TestRunPersistsProgressAndReportsAndSurvivesReload(t *testing.T) {
 	if err != nil || info.Mode().Perm() != 0600 {
 		t.Fatalf("file permissions: %v %v", info, err)
 	}
-	reopened, err := New(context.Background(), s.store.dir, s.host, s.origin)
+	reopened, err := New(context.Background(), s.store.dir, s.host, s.origin, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

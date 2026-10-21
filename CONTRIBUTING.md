@@ -42,7 +42,9 @@ if it is not on Node's module search path. `CHROME_PATH` can select an existing
 Chrome/Chromium executable. This test creates and removes its own temporary data
 directory; it does not use `.gometer/`. It checks editing, unfinished drafts,
 dependency reordering, save/reload, literal user content, six viewport widths,
-and successful/failed journeys with independently counted HTTP requests.
+and successful/failed journeys with independently counted HTTP requests. It also
+checks collapsed navigation, focus and tooltips, theme changes, mobile drawers,
+History comparison, Guide/Coverage, JMX review and the CSV dialog.
 
 ## Keep development state separate
 

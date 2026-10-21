@@ -108,8 +108,9 @@ Distributed rate-mode tests assign each arrival once across a shared schedule
 and divide the concurrency cap into fixed worker quotas. Global percentiles
 merge histogram buckets, and missing worker results fail the run without
 inventing counts. Worker resource measurements remain per process. Remote
-control requires authenticated HTTPS; local worker processes can use loopback
-HTTP. See [docs/workers.md](workers.md) for setup and limitations.
+control uses authenticated HTTPS by default; explicit HTTP opt-ins are described
+in [worker transport](workers.md#optional-remote-http-control). Local worker
+processes can use loopback HTTP. See [docs/workers.md](workers.md) for setup and limitations.
 
 ## HTTP behavior
 

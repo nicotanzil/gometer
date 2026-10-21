@@ -6,7 +6,7 @@ ARG TARGETOS=linux
 ARG TARGETARCH=amd64
 COPY . .
 
-ARG VERSION=0.6.0-dev
+ARG VERSION=0.8.0-dev
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -trimpath \
     -ldflags="-s -w -X gometer/internal/cli.Version=${VERSION}" \

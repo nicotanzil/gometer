@@ -57,7 +57,7 @@ Command-line flags override the corresponding scenario fields.
 | `think_time` | `0s` | Pause between each user's requests or journeys; users mode only |
 | `max_response_bytes` | `10485760` | Response-body read cap; exceeding it fails the attempt |
 | `diagnostics` | `true` | Generator resource sampling and HTTP transport timing; `false` disables both |
-| `workers` | empty | Worker control origins for distributed rate-mode tests; empty runs locally |
+| `workers` | empty | Worker control origins for distributed rate-mode tests; empty runs locally; remote HTTP requires separate coordinator startup permission |
 | `telemetry` | absent | Opt-in selected scalar series from a Prometheus text exporter; see [telemetry.md](telemetry.md) |
 | `success_statuses` | all `2xx` | Optional explicit list of successful status codes |
 | `stages` | empty | Sequential constant-rate phases; rate `0` creates a pause |
@@ -97,6 +97,13 @@ Validate before starting:
 ```sh
 ./bin/gometer validate -config examples/smoke.json
 ```
+
+Saved configurations describe worker URLs, not transport permission. The CLI
+and dashboard reject remote HTTP workers during validation/execution unless the
+operator started the coordinator with `-allow-http-workers` or
+`GOMETER_ALLOW_HTTP_WORKERS=true`. The worker listener independently needs
+`-allow-http` or `GOMETER_WORKER_ALLOW_HTTP=true`. These settings are not JSON
+fields and cannot be enabled by imports. See [worker transport](workers.md#optional-remote-http-control).
 
 Validation does not contact targets, workers, or telemetry exporters. It checks
 syntax and executable configuration, not reachability or credentials at runtime.

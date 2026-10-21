@@ -27,7 +27,7 @@ controller. A public DNS name and TLS certificate do not provide user login.
 | --- | --- |
 | Browser to NGINX | Dashboard hostname certificate/key at NGINX, for example the `gometer-dashboard-tls` Secret |
 | NGINX to dashboard pod | HTTP on port 8790; no dashboard pod certificate |
-| Dashboard to remote workers, when used | Worker server certificate/key; dashboard trusts the issuer through `GOMETER_WORKER_CA` or available system roots |
+| Dashboard to remote workers, when used | Verified HTTPS by default: worker certificate/key and coordinator CA trust. The [optional HTTP overlay](#optional-http-worker-fleet) removes application TLS on this hop with explicit opt-ins |
 
 A dashboard-only install does not need `GOMETER_WORKER_TOKEN`,
 `GOMETER_WORKER_CA`, `gometer-worker-token`, `gometer-worker-tls`, or
@@ -84,7 +84,9 @@ worker's pod name directly; `POD_NAME` and argument substitution are unnecessary
 | `GOMETER_UI_LISTEN` | Dashboard | `0.0.0.0:8790` so the Service can reach it |
 | `GOMETER_UI_PUBLIC_ORIGIN` | Dashboard | Exact browser origin, such as `https://gometer.example.internal`; no path prefix |
 | `GOMETER_UI_DATA` | Dashboard | `/data`, backed by the PVC |
-| `GOMETER_WORKER_LISTEN` | Workers | `0.0.0.0:8801`; non-loopback requires TLS |
+| `GOMETER_WORKER_LISTEN` | Workers | `0.0.0.0:8801`; non-loopback requires TLS or explicit HTTP permission |
+| `GOMETER_WORKER_ALLOW_HTTP` | Workers, HTTP overlay only | `true` permits non-loopback HTTP; default `false`; token still required |
+| `GOMETER_ALLOW_HTTP_WORKERS` | Dashboard, HTTP overlay only | `true` independently permits remote HTTP worker origins; default `false` |
 | `GOMETER_WORKER_NAME` | Workers | `metadata.name` through the downward API |
 | `GOMETER_WORKER_TLS_CERT` | Workers | Mounted server certificate PEM path |
 | `GOMETER_WORKER_TLS_KEY` | Workers | Mounted private key PEM path |
@@ -127,7 +129,7 @@ old defaults. Build the current source before applying these templates:
 
 ```sh
 docker buildx build --platform linux/amd64 \
-  --build-arg VERSION=0.6.0-dev \
+  --build-arg VERSION=0.8.0 \
   --tag ghcr.io/nicotanzil/gometer:env-startup \
   --push .
 ```
@@ -284,6 +286,67 @@ The DNS names must match certificate SANs; adjust them if your namespace,
 StatefulSet, Service or cluster domain differs. GoMeter does not discover
 replicas: update the list when you scale. Use distinct pod origins rather than
 one load-balanced worker Service. Distributed workers support rate mode only.
+
+## Optional HTTP worker fleet
+
+Use [`k8s/http-workers`](../k8s/http-workers) only when you explicitly accept
+plaintext worker control on your protected network. It opts workers in with
+`GOMETER_WORKER_ALLOW_HTTP=true` and the dashboard with
+`GOMETER_ALLOW_HTTP_WORKERS=true`. The shared `gometer-worker-token` Secret is
+still required. The worker token and test configuration travel without
+application TLS; browser HTTPS at NGINX protects a different connection.
+
+This overlay removes worker certificate/key environment settings and mounts,
+and the dashboard's `GOMETER_WORKER_CA` environment setting and mount. It has no
+references to `gometer-worker-tls` or `gometer-worker-ca`. It retains the PVC,
+three stable worker origins, token Secret references, Services and NetworkPolicies.
+The base and F5 overlay keep verified HTTPS worker control as their default.
+
+Build and publish your own current-source image; the HTTP options are absent
+from earlier binaries. The overlay uses `http-workers` as an example tag, not a
+claim that this image is published:
+
+```sh
+docker buildx build --platform linux/amd64 \
+  --build-arg VERSION=0.8.0 \
+  --tag ghcr.io/nicotanzil/gometer:http-workers --push .
+```
+
+Change the image name/tag in the overlay if using another registry, and use a
+fresh tag or digest for each revision. Configure the dashboard public origin,
+VirtualServer host/access controls and storage as described above. Create the
+shared token once, then render and apply **this overlay**:
+
+```sh
+kubectl apply -f k8s/base/namespace.yaml
+kubectl -n gometer create secret generic gometer-worker-token \
+  --from-literal=token="$(openssl rand -hex 32)"
+kubectl kustomize k8s/http-workers
+kubectl apply -k k8s/http-workers
+kubectl -n gometer rollout status deployment/gometer-dashboard
+kubectl -n gometer rollout status statefulset/gometer-worker
+```
+
+Reuse the existing VirtualServer. If creating the supplied one, apply its file
+separately with `kubectl -n gometer apply -f k8s/f5-kic/virtualserver.yaml` after
+configuring its hostname, TLS Secret and access controls. Do not apply the
+`k8s/f5-kic` or `k8s/base` overlay afterward unless deliberately restoring worker
+TLS; those overlays restore certificate/CA Secret dependencies.
+
+Enter each worker's HTTP pod origin in the dashboard **Workers** field:
+
+```text
+http://gometer-worker-0.gometer-workers.gometer.svc.cluster.local:8801
+http://gometer-worker-1.gometer-workers.gometer.svc.cluster.local:8801
+http://gometer-worker-2.gometer-workers.gometer.svc.cluster.local:8801
+```
+
+Keep the same token on both sides and restrict worker ingress to the dashboard.
+The dashboard shows a startup-permission banner and HTTP transport warnings.
+Saving/importing this worker list does not grant permission on another dashboard.
+These settings do not change workload HTTPS or telemetry trust. To return to
+verified worker HTTPS, create the TLS/CA Secrets, remove the opt-ins, apply the
+secure base and change the worker origins back to `https://` between runs.
 
 ## Trust, updates and recovery
 

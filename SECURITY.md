@@ -14,7 +14,7 @@ service security model or a security certification.
 | Dashboard | Loopback by default; optional remote listener requires an exact HTTPS public origin, Host/Origin checks, startup API token, and restrictive content security policy | Keep loopback for local use. For remote access, require a VPN or authenticated, allowlisted private ingress and keep the data directory private |
 | Workload HTTPS | System certificate roots and hostname verification by default | Choose trusted targets and protect supplied workload credentials |
 | Insecure workload HTTPS | Explicit opt-in, saved and labeled in results | Use only where skipping target identity checks is appropriate; it applies to all workload requests in that run |
-| Worker control | Shared token; remote workers require verified HTTPS; control redirects rejected | Restrict worker network access, distribute credentials securely, and operate only trusted workers |
+| Worker control | Shared token; verified HTTPS by default; remote HTTP requires independent worker/coordinator startup opt-ins; control redirects rejected | Restrict worker network access, distribute credentials securely, and operate only trusted workers |
 | Target-server telemetry | Separate client, verified HTTPS, optional environment bearer token, bounded parsing | Scope exporter access and select the intended endpoint and metrics |
 | Local workspace and reports | Atomic writes; new workspace directories 0700 and files 0600 on permission-based filesystems | Protect the account, existing directories, downloaded files, backups, and CI artifact access |
 
@@ -30,7 +30,16 @@ interface for remote load generation.
 The worker token authorizes reserving, starting, stopping, and reading jobs.
 A worker receives workload configuration, including headers, bodies, and data.
 Possession of the token permits instructing that worker to send network traffic;
-network and egress controls remain necessary in your environment. Worker results
+network and egress controls remain necessary in your environment.
+
+With separate HTTP opt-ins (`GOMETER_WORKER_ALLOW_HTTP` on the worker and
+`GOMETER_ALLOW_HTTP_WORKERS` on the coordinator), the worker token and
+test configuration travel without application TLS. Network observers can obtain
+the token and supplied workload secrets; a network attacker can alter control
+traffic and results. HTTPS ingress for the dashboard does not protect this hop.
+Restrict plaintext control to an explicitly accepted, protected network. These
+permissions default to false and cannot be granted by a scenario or imported
+bundle. Invalid TLS configuration never triggers HTTP fallback. Worker results
 are trusted measurements subject to consistency validation, not attested data.
 
 See [worker setup](docs/workers.md) and [HTTPS options](docs/https.md) for trust

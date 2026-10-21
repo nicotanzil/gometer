@@ -1,65 +1,57 @@
 # Dashboard visual system
 
-The visual source is the supplied SmartCare Clinical AI HTML. Its clinical copy,
-marketing sections, routes, WebGL shader, and menu scripts are not application
-requirements. GoMeter keeps its screens, content, configuration model, validation,
-journey coordinates, API routes, theme preferences, and execution behavior.
+The dashboard follows the approved **Variant A · Workspace** in
+[the enterprise prototype](enterprise-prototype.html). The prototype is a design
+record: its sample data, generated configurations, simulation and stub controls
+are not application behavior. This direction supersedes the earlier SmartCare
+style for the dashboard. Exported report styles remain separate.
 
-## Extracted source language
+## Visual rules
 
-| Area | Source values | Application mapping |
-| --- | --- | --- |
-| Headings | Bricolage Grotesque, 200–400, −0.035em tracking, tight line height | 300-weight page headings; 400-weight panel headings; scaled for a developer workbench |
-| UI and prose | Hanken Grotesk, 300–600, 1.55 line height | 15px body; 13–14px forms and controls; light supporting prose |
-| Technical data | IBM Plex Mono, 400–500, tabular figures | URLs, JSON, request methods, metrics, chart units, small labels |
-| Background | `#070a13`, `#0c1121`, `#121933` | Page, editable fields, raised selections |
-| Panels | `#05070d` | Builder, results, saved scenarios, Guide, JMX, journey nodes |
-| Text | `#e9ecf5`, `#b8bfd5`, `#848ba5` | Primary, secondary, and supporting text |
-| Signal | `#8db5ff`; primary button `#2b56c9` | Focus, selection, actions, charts, data dependencies |
-| Status | Alert `#ff6b7d`, warning `#f0b64e`, success `#4fcf9f` | Errors, insecure HTTPS and migration warnings, passed checks |
-| Borders | Blue-white at 11%, 14%, 22%, and 50% opacity | Subtle dividers, cards, inputs, selected controls |
-| Corners | Panels 16px, inner surfaces 10–12px, actions 999px | Cards, inputs, pill buttons and status badges |
-| Spacing | 4/8/12/16/20/24px rhythm; 20px card gaps; fluid 20–48px gutters; section spacing 88–160px | Component rhythm retained; app sections use 24–36px spacing to suit a workbench |
-| Shadows | `0 40px 90px -50px #000`; inset button highlight and blue bloom | Quiet panel depth and focused primary actions |
-| Motion | `cubic-bezier(.6,0,.2,1)`, 300–400ms interaction transitions | Hover, focus, and selection; no decorative animation during tests |
+| Area | Dashboard treatment |
+| --- | --- |
+| Typography | Native system sans serif; 13px body, 12–13px labels/controls, 23px page headings; bundled IBM Plex Mono for URLs, JSON, units and measurements |
+| Surfaces | Neutral page, plain panels and inputs; thin borders; no decorative gradients, glows or continuous animation |
+| Corners | 4–6px for controls, panels, nodes and dialogs |
+| Actions | One blue primary accent; secondary actions use neutral borders; success, warning and failure retain semantic colors |
+| Spacing | 6/8/12/16/20/24px component rhythm; compact forms; aligned tables; 28px desktop gutters |
+| Canvas | Dotted background, vertical execution flow, outline and inspector; selected nodes use a clear border |
+| Copy | Short labels and headings; contextual Guide links for explanations; units, errors, consequences and measurement limits remain visible |
 
-The reference's spacious, asymmetric grids become the application's existing
-editor/preview, diagram/inspector, and chart grids. Thin dividers and typography
-establish hierarchy. The journey editor retains its real nodes, branch paths,
-loops, pan, zoom, full screen, and mobile Canvas/Inspector views.
+Light, Dark and System use the same hierarchy and controls. Theme preference is
+browser-local. There are no CDN or framework dependencies.
 
-The source centers a 1240px content container, pairs asymmetric two-column
-sections with two-column cards and four-column statistics, then stacks the
-columns at narrower widths. The dashboard keeps its sidebar and uses a 1440px
-main container so the diagram and inspector have room; reports use 1240px.
+## Navigation and editor space
 
-The original animation vocabulary also includes a 900ms menu curtain, 1s menu
-entries staggered by 70ms, a 140s ring rotation, a 22s HUD tilt, 5s fading ticks,
-2s pulse rings, animated chart dashes, and an offscreen-paused WebGL glow with a
-static fallback. These are decorative presentation examples. GoMeter adopts the
-interaction easing, button illumination, and static panel glow; continuous
-decoration is omitted to avoid adding load while measuring a system. The source's
-reduced-motion behavior is retained.
+The desktop sidebar is 196px expanded and 60px collapsed. Its keyboard-operable
+toggle exposes `aria-expanded` and `aria-controls`. Destinations retain accessible
+names; icon-only items show hover/focus tooltips, dismissible with Escape. The
+collapsed state is saved under `gometer.sidebar.collapsed.v1`, outside scenario
+configuration. Collapsing changes available width without replacing editor state.
 
-The source is dark only. GoMeter's Dark theme uses its exact palette; Light uses
-an inverse navy/blue palette with the same hierarchy, typography, and components.
-System still follows the operating system. Semantic status colors remain distinct
-from the blue action accent.
+At 900px and below, the top bar opens a navigation drawer. It traps focus while
+open, makes the workspace inert, supports Escape and backdrop dismissal, and
+restores focus on close. Choosing a destination closes it and focuses the new
+heading. Resizing restores a usable layout without changing the desktop
+preference. The theme picker remains in the top bar.
 
-## Implementation
+The existing canvas model and coordinates remain authoritative. Presentation
+changes preserve branches/loops, child paths, dependencies, pauses, checks,
+reordering, move-to-path, undo, unfinished drafts, pan/zoom/fit/full screen and
+mobile Canvas/Inspector access. No prototype execution logic enters the app.
 
-- `internal/dashboard/assets/theme.css` owns the visual tokens and component
-  presentation. The existing layout CSS and JavaScript retain behavior.
-- `internal/design/assets/fonts.css` defines the reference fonts. All fonts and
-  their SIL Open Font Licenses are bundled locally; no CDN is required at runtime.
-  Latin and Latin Extended subsets have system fallbacks for other scripts.
-- `internal/design/assets/report.css` applies the language to exported reports.
-  `internal/design` embeds the same fonts as data URLs in standalone report HTML.
-- The dashboard's static allowlist adds the font stylesheet and four font files.
-  Report downloads permit embedded font data while retaining their restrictive CSP.
-- Existing focus rings, accessible labels, error messages, theme persistence, and
-  mobile controls remain. Reduced motion disables transitions. Exported reports
-  include a print palette.
+## Implementation and verification
 
-Historical HTML prototypes under `docs/` remain design records. The live app and
-exported reports are the implementation targets.
+- `internal/dashboard/assets/theme.css` owns dashboard tokens and presentation.
+  Component styles retain their structural layout rules.
+- `navigation.css` and `navigation.js` own the responsive shell, preference and
+  navigation accessibility. Existing view handlers retain application behavior.
+- Host/Origin checks, worker transport permissions and measurement contracts stay
+  in their existing backend modules. Plaintext-control warnings remain visible.
+- `make test-ui` checks JavaScript syntax and dependency-free models/controllers.
+  `make test-browser` exercises the real app with a disposable workspace and
+  counted local HTTP target, including navigation, drafts, save/reload, complex
+  journeys, comparison, themes and responsive screens. See [contributing](../CONTRIBUTING.md).
+
+Local browser checks are evidence of the exercised flows, not a security audit,
+performance benchmark or production deployment.

@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: gometer-worker
+spec:
+  template:
+    spec:
+      containers:
+        - name: worker
+          env:
+            - name: GOMETER_WORKER_ALLOW_HTTP
+              value: "true"
+            - name: GOMETER_WORKER_TLS_CERT
+              $patch: delete
+            - name: GOMETER_WORKER_TLS_KEY
+              $patch: delete
+          volumeMounts:
+            - name: worker-tls
+              $patch: delete
+      volumes:
+        - name: worker-tls
+          $patch: delete

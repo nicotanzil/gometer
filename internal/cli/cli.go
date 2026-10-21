@@ -18,7 +18,7 @@ import (
 	"gometer/internal/telemetry"
 )
 
-var Version = "0.6.0-dev"
+var Version = "0.8.0-dev"
 
 const help = `GoMeter — HTTP load and stress testing
 
@@ -70,7 +70,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 func worker(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("worker", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	listen := envString(fs, "listen", "GOMETER_WORKER_LISTEN", "127.0.0.1:8801", "worker IP and port; non-loopback requires TLS")
+	listen := envString(fs, "listen", "GOMETER_WORKER_LISTEN", "127.0.0.1:8801", "worker IP and port; remote HTTP requires -allow-http")
 	host, _ := os.Hostname()
 	if host == "" {
 		host = "worker"
@@ -78,17 +78,22 @@ func worker(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	name := envString(fs, "name", "GOMETER_WORKER_NAME", host, "worker display name")
 	cert := envString(fs, "tls-cert", "GOMETER_WORKER_TLS_CERT", "", "PEM server certificate for remote control")
 	key := envString(fs, "tls-key", "GOMETER_WORKER_TLS_KEY", "", "PEM private key for remote control")
+	allowHTTP := fs.Bool("allow-http", false, "permit non-loopback HTTP worker control without application TLS (env GOMETER_WORKER_ALLOW_HTTP)")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return 0
 		}
 		return 2
 	}
-	if fs.NArg() != 0 {
-		fmt.Fprintln(stderr, "usage: gometer worker [-listen IP:port] [-name worker] [-tls-cert cert.pem -tls-key key.pem]")
+	if err := applyEnvBool(fs, "allow-http", "GOMETER_WORKER_ALLOW_HTTP"); err != nil {
+		fmt.Fprintln(stderr, err)
 		return 2
 	}
-	if err := distributed.ServeWorker(ctx, *listen, *name, os.Getenv("GOMETER_WORKER_TOKEN"), *cert, *key, stdout); err != nil {
+	if fs.NArg() != 0 {
+		fmt.Fprintln(stderr, "usage: gometer worker [-listen IP:port] [-name worker] [-tls-cert cert.pem -tls-key key.pem] [-allow-http]")
+		return 2
+	}
+	if err := distributed.ServeWorker(ctx, *listen, *name, os.Getenv("GOMETER_WORKER_TOKEN"), *cert, *key, *allowHTTP, stdout); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
@@ -100,11 +105,16 @@ func ui(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	listen := envString(fs, "listen", "GOMETER_UI_LISTEN", "127.0.0.1:8790", "dashboard listen IP and port; non-loopback requires -public-origin")
 	publicOrigin := envString(fs, "public-origin", "GOMETER_UI_PUBLIC_ORIGIN", "", "exact HTTPS origin used by a trusted private ingress")
+	allowHTTP := fs.Bool("allow-http-workers", false, "permit remote HTTP worker control without application TLS (env GOMETER_ALLOW_HTTP_WORKERS)")
 	data := envString(fs, "data", "GOMETER_UI_DATA", ".gometer", "directory for saved scenarios and runs")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return 0
 		}
+		return 2
+	}
+	if err := applyEnvBool(fs, "allow-http-workers", "GOMETER_ALLOW_HTTP_WORKERS"); err != nil {
+		fmt.Fprintln(stderr, err)
 		return 2
 	}
 	if fs.NArg() != 0 || *data == "" {
@@ -116,7 +126,7 @@ func ui(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
-	if err := dashboard.Serve(ctx, *listen, path, *publicOrigin, stdout); err != nil {
+	if err := dashboard.Serve(ctx, *listen, path, *publicOrigin, dashboard.Options{AllowHTTPWorkers: *allowHTTP}, stdout); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
@@ -140,10 +150,15 @@ func validate(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	path := envString(fs, "config", "GOMETER_CONFIG", "", "JSON scenario to validate")
 	csv := addCSVFlags(fs)
+	allowHTTP := fs.Bool("allow-http-workers", false, "permit remote HTTP worker control without application TLS (env GOMETER_ALLOW_HTTP_WORKERS)")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return 0
 		}
+		return 2
+	}
+	if err := applyEnvBool(fs, "allow-http-workers", "GOMETER_ALLOW_HTTP_WORKERS"); err != nil {
+		fmt.Fprintln(stderr, err)
 		return 2
 	}
 	if *path == "" || fs.NArg() != 0 {
@@ -158,6 +173,13 @@ func validate(args []string, stdout, stderr io.Writer) int {
 	if err := csv.apply(fs, &c); err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
+	}
+	if err := config.ValidateWorkerTransport(c.Workers, *allowHTTP); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 2
+	}
+	if config.HasRemoteHTTPWorkers(c.Workers) {
+		fmt.Fprintln(stderr, "WARNING:", distributed.PlaintextControlWarning)
 	}
 	p, err := c.Validate()
 	if err != nil {
@@ -177,6 +199,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	d := config.Defaults()
 	path := envString(fs, "config", "GOMETER_CONFIG", "", "JSON scenario file")
 	csv := addCSVFlags(fs)
+	allowHTTP := fs.Bool("allow-http-workers", false, "permit remote HTTP worker control without application TLS (env GOMETER_ALLOW_HTTP_WORKERS)")
 	url := fs.String("url", "", "target HTTP/HTTPS URL")
 	name := fs.String("name", d.Name, "test name")
 	method := fs.String("method", d.Method, "HTTP method")
@@ -215,6 +238,10 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		if err == flag.ErrHelp {
 			return 0
 		}
+		return 2
+	}
+	if err := applyEnvBool(fs, "allow-http-workers", "GOMETER_ALLOW_HTTP_WORKERS"); err != nil {
+		fmt.Fprintln(stderr, err)
 		return 2
 	}
 	if fs.NArg() != 0 {
@@ -328,6 +355,13 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
+	if err := config.ValidateWorkerTransport(c.Workers, *allowHTTP); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 2
+	}
+	if config.HasRemoteHTTPWorkers(c.Workers) {
+		fmt.Fprintln(stderr, "WARNING:", distributed.PlaintextControlWarning)
+	}
 	p, err := c.Validate()
 	if err != nil {
 		fmt.Fprintln(stderr, err)
@@ -368,7 +402,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	var result engine.Result
 	if len(c.Workers) > 0 {
 		fmt.Fprintf(stderr, "Coordinating %d workers; the configured rate and concurrency are fleet totals.\n", len(c.Workers))
-		result, err = distributed.Run(ctx, c, distributed.Options{Token: os.Getenv("GOMETER_WORKER_TOKEN"), CAFile: *workerCA, OnProgress: opts.OnProgress, Telemetry: opts.Telemetry})
+		result, err = distributed.Run(ctx, c, distributed.Options{AllowHTTPWorkers: *allowHTTP, Token: os.Getenv("GOMETER_WORKER_TOKEN"), CAFile: *workerCA, OnProgress: opts.OnProgress, Telemetry: opts.Telemetry})
 	} else {
 		result, err = engine.Run(ctx, c, opts)
 	}

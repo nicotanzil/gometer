@@ -235,7 +235,7 @@ func (s *Sampler) fetch(ctx context.Context) ([]Value, error) {
 	}
 	r.Header.Set("Accept", "text/plain;version=0.0.4")
 	r.Header.Set("Accept-Encoding", "identity")
-	r.Header.Set("User-Agent", "GoMeter/0.6.0 telemetry")
+	r.Header.Set("User-Agent", "GoMeter/0.8.0 telemetry")
 	if s.plan.BearerAuth {
 		r.Header.Set("Authorization", "Bearer "+s.token)
 	}

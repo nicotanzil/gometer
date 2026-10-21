@@ -42,8 +42,8 @@
     for(const [key,view] of Object.entries(navigation))dialog.querySelector('[data-navigation]').append(row({build:'Build',live:'Live results',history:'Run history',guide:'User guide',coverage:'Feature coverage'}[view],['G',key.toUpperCase()]));
     for(const [name,keys] of [['Validate',[`${mod} Enter`]],['Save scenario',[`${mod} S`]],['Start run',[`${mod} Shift Enter`]],['Undo canvas edit',[`${mod} Z`]]])dialog.querySelector('[data-builder]').append(row(name,keys));
     const hint=el('div',undefined,'shortcut-sequence');hint.hidden=true;hint.setAttribute('role','status');hint.setAttribute('aria-live','polite');hint.textContent='Go to: B Build · L Live · H History · G Guide · C Coverage · Esc cancel';document.body.append(hint);
-    function open(){if(document.querySelector('dialog[open]'))return;keys.reset();previousFocus=document.activeElement;const menu=previousFocus?.closest?.('#nav-more');if(menu){menu.open=false;previousFocus=menu.querySelector('summary');}dialog.showModal();}
-    const keys=controller({allowed:action=>action==='help'||allowed(action),modal:()=>!!document.querySelector('dialog[open]'),characters:()=>enabled,hint:visible=>{hint.hidden=!visible;},perform:action=>{try{Promise.resolve(action==='help'?open():perform(action)).catch(onError);}catch(e){onError(e);}}});
+    function open(){if(document.querySelector('dialog[open]'))return;keys.reset();previousFocus=document.activeElement;dialog.showModal();}
+    const keys=controller({allowed:action=>action==='help'||allowed(action),modal:()=>!!document.querySelector('dialog[open],#workspace-sidebar[aria-modal="true"]'),characters:()=>enabled,hint:visible=>{hint.hidden=!visible;},perform:action=>{try{Promise.resolve(action==='help'?open():perform(action)).catch(onError);}catch(e){onError(e);}}});
     const picker=dialog.querySelector('#shortcut-characters');picker.checked=enabled;
     function cues(){
       dialog.querySelector('[data-navigation]').parentElement.setAttribute('aria-disabled',String(!enabled));

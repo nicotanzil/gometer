@@ -34,23 +34,28 @@ import (
 //go:embed assets/*
 var assets embed.FS
 
+type Options struct {
+	AllowHTTPWorkers bool
+}
+
 type Server struct {
-	mu             sync.Mutex
-	store          *store
-	current        *Run
-	cancel         context.CancelFunc
-	done           chan struct{}
-	ctx            context.Context
-	closing        bool
-	token          string
-	host           string
-	origin         string
-	secureCookie   bool
-	exports        map[string]configExport
-	workerToken    string
-	workerCA       string
-	telemetryToken string
-	telemetryCA    string
+	allowHTTPWorkers bool
+	mu               sync.Mutex
+	store            *store
+	current          *Run
+	cancel           context.CancelFunc
+	done             chan struct{}
+	ctx              context.Context
+	closing          bool
+	token            string
+	host             string
+	origin           string
+	secureCookie     bool
+	exports          map[string]configExport
+	workerToken      string
+	workerCA         string
+	telemetryToken   string
+	telemetryCA      string
 }
 
 type configExport struct {
@@ -109,7 +114,7 @@ func parsePublicOrigin(raw string) (host, origin string, err error) {
 	return authority, "https://" + authority, nil
 }
 
-func New(ctx context.Context, dir, host, origin string) (*Server, error) {
+func New(ctx context.Context, dir, host, origin string, opts Options) (*Server, error) {
 	saved, err := openStore(dir)
 	if err != nil {
 		return nil, err
@@ -118,10 +123,10 @@ func New(ctx context.Context, dir, host, origin string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Server{store: saved, ctx: ctx, token: token, host: host, origin: origin, secureCookie: strings.HasPrefix(origin, "https://"), exports: map[string]configExport{}, workerToken: os.Getenv("GOMETER_WORKER_TOKEN"), workerCA: os.Getenv("GOMETER_WORKER_CA"), telemetryToken: os.Getenv("GOMETER_TELEMETRY_TOKEN"), telemetryCA: os.Getenv("GOMETER_TELEMETRY_CA")}, nil
+	return &Server{allowHTTPWorkers: opts.AllowHTTPWorkers, store: saved, ctx: ctx, token: token, host: host, origin: origin, secureCookie: strings.HasPrefix(origin, "https://"), exports: map[string]configExport{}, workerToken: os.Getenv("GOMETER_WORKER_TOKEN"), workerCA: os.Getenv("GOMETER_WORKER_CA"), telemetryToken: os.Getenv("GOMETER_TELEMETRY_TOKEN"), telemetryCA: os.Getenv("GOMETER_TELEMETRY_CA")}, nil
 }
 
-func Serve(ctx context.Context, address, dir, publicOrigin string, output io.Writer) error {
+func Serve(ctx context.Context, address, dir, publicOrigin string, opts Options, output io.Writer) error {
 	ln, err := Listen(address, publicOrigin)
 	if err != nil {
 		return err
@@ -135,12 +140,15 @@ func Serve(ctx context.Context, address, dir, publicOrigin string, output io.Wri
 			return err
 		}
 	}
-	s, err := New(ctx, dir, host, origin)
+	s, err := New(ctx, dir, host, origin, opts)
 	if err != nil {
 		return err
 	}
 	if publicOrigin != "" {
 		fmt.Fprintln(output, "Warning: GoMeter is single-user; protect this listener with a VPN or ingress authentication and an allowlist.")
+	}
+	if opts.AllowHTTPWorkers {
+		fmt.Fprintln(output, "WARNING: Remote HTTP worker control is permitted.", distributed.PlaintextControlWarning)
 	}
 	httpServer := &http.Server{Handler: s, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 << 10}
 	fmt.Fprintf(output, "GoMeter dashboard: %s\nDashboard listener: %s\nSaved scenarios and runs: %s\n", origin, ln.Addr(), dir)
@@ -249,7 +257,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if r.Method != http.MethodHead {
-			t.Execute(w, s.token)
+			t.Execute(w, struct {
+				Token            string
+				AllowHTTPWorkers bool
+				PlaintextWarning string
+			}{s.token, s.allowHTTPWorkers, distributed.PlaintextControlWarning})
 		}
 	case "/fonts.css", "/BricolageGrotesque-Latin.woff2", "/BricolageGrotesque-LatinExt.woff2", "/HankenGrotesk-Latin.woff2", "/HankenGrotesk-LatinExt.woff2",
 		"/gometer-mark.svg", "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png":
@@ -273,7 +285,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodHead {
 			w.Write(body)
 		}
-	case "/app.js", "/style.css", "/theme.js", "/theme.css", "/journey-model.js", "/journey-editor.js", "/journey.css", "/jmx.js", "/jmx.css", "/csv.js", "/csv.css", "/shortcuts.js", "/shortcuts.css", "/coverage.json",
+	case "/app.js", "/style.css", "/theme.js", "/theme.css", "/navigation.js", "/navigation.css", "/journey-model.js", "/journey-editor.js", "/journey.css", "/jmx.js", "/jmx.css", "/csv.js", "/csv.css", "/shortcuts.js", "/shortcuts.css", "/coverage.json",
 		"/IBMPlexSans-Regular.woff2", "/IBMPlexSans-Medium.woff2", "/IBMPlexSans-SemiBold.woff2", "/IBMPlexSans-Bold.woff2", "/IBMPlexMono-Regular.woff2":
 		body, err := assets.ReadFile("assets" + r.URL.Path)
 		if err != nil {
@@ -379,7 +391,7 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 			summary := s.current.summary()
 			current = &summary
 		}
-		jsonResponse(w, 200, map[string]any{"current": current, "runs": s.store.runList(), "scenarios": s.store.scenarioList(), "migrations": s.store.migrationList(), "max_samples": maxSamples})
+		jsonResponse(w, 200, map[string]any{"current": current, "runs": s.store.runList(), "scenarios": s.store.scenarioList(), "migrations": s.store.migrationList(), "max_samples": maxSamples, "allow_http_workers": s.allowHTTPWorkers})
 		return
 	}
 	if r.Method == "GET" && path == "/api/examples" {
@@ -404,6 +416,10 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 		}
 		switch path {
 		case "/api/validate":
+			if err := config.ValidateWorkerTransport(c.Workers, s.allowHTTPWorkers); err != nil {
+				fail(w, 400, err.Error())
+				return
+			}
 			unit := "requests"
 			if p.IsJourney() {
 				unit = "journeys"
@@ -718,6 +734,10 @@ func (s *Server) saveScenario(w http.ResponseWriter, id string, c config.Config)
 }
 
 func (s *Server) start(w http.ResponseWriter, c config.Config, p config.Plan) {
+	if err := config.ValidateWorkerTransport(c.Workers, s.allowHTTPWorkers); err != nil {
+		fail(w, 400, err.Error())
+		return
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if c.Telemetry != nil {
@@ -799,7 +819,7 @@ func (s *Server) execute(ctx context.Context, c config.Config, p config.Plan, id
 	var result engine.Result
 	var err error
 	if len(c.Workers) > 0 {
-		result, err = distributed.Run(ctx, c, distributed.Options{Token: s.workerToken, CAFile: s.workerCA, OnProgress: onProgress, Telemetry: telemetry.Options{Token: s.telemetryToken, CAFile: s.telemetryCA}})
+		result, err = distributed.Run(ctx, c, distributed.Options{AllowHTTPWorkers: s.allowHTTPWorkers, Token: s.workerToken, CAFile: s.workerCA, OnProgress: onProgress, Telemetry: telemetry.Options{Token: s.telemetryToken, CAFile: s.telemetryCA}})
 	} else {
 		result, err = engine.Run(ctx, c, engine.Options{OnProgress: onProgress, Telemetry: telemetry.Options{Token: s.telemetryToken, CAFile: s.telemetryCA}})
 	}

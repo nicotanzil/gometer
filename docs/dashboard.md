@@ -48,12 +48,18 @@ is `GOMETER_*`; `GMETER_*` names are not read.
 For a first test, follow [getting started](getting-started.md) or open **Guide**
 in the app. See [operations](operations.md) for workspace ownership, retention,
 backup, and recovery, and [security](../SECURITY.md) for trust boundaries.
-Use **Theme** in the workspace sidebar to follow the system appearance or select
+Use **Theme** in the top bar to follow the system appearance or select
 Light or Dark. The choice is saved in this browser.
+
+The sidebar toggle switches between full labels and an icon rail on desktop.
+Hover or focus an icon to read its label. The preference is saved in this browser
+and does not change tests. On smaller screens, **Open navigation** opens a drawer;
+Escape or its close control returns to the editor. Theme selection stays in the
+top bar. Resizing between layouts preserves the current editor and drafts.
 
 ## Keyboard shortcuts
 
-Choose **Keyboard shortcuts** in the sidebar (on small screens, open **More**),
+Choose **Keyboard shortcuts** in the sidebar (on small screens, open navigation),
 or press **?** outside a text field. The reference shows keys for your platform.
 
 | Keys | Action |
@@ -335,7 +341,7 @@ Backlog rows do not enable features.
 
 ## In-app user guide
 
-**Guide** is in the sidebar on desktop and under **More** on phones. It covers a first local test,
+**Guide** is in the sidebar; on phones, open navigation from the top bar. It covers a first local test,
 requests, traffic models, pass criteria, interpreting results, reusable workflows,
 and troubleshooting. Help links in Quick test and beside Pass criteria, Results,
 and History open the relevant topic. Guide shortcuts return to the matching

@@ -10,6 +10,7 @@ test: test-ui
 
 test-ui:
 	$(NODE) --check internal/dashboard/assets/theme.js
+	$(NODE) --check internal/dashboard/assets/navigation.js
 	$(NODE) --check internal/dashboard/assets/app.js
 	$(NODE) --check internal/dashboard/assets/jmx.js
 	$(NODE) --check internal/dashboard/assets/csv.js

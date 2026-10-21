@@ -10,7 +10,7 @@ import (
 	"gometer/internal/metrics"
 )
 
-const userAgent = "GoMeter/0.6.0"
+const userAgent = "GoMeter/0.8.0"
 
 // A trace retains only pending timestamps. Events go directly to bounded
 // aggregate histograms; there are no per-response timing slices to retain.

@@ -93,6 +93,7 @@ precedence over an unspecified flag.
 | `-journey-timeout` | `30s` | Whole-journey deadline, including pauses |
 | `-journey-p95` | disabled | Maximum whole-journey p95; requires scenarios |
 | `-diagnostics` | `true` | Generator resources and HTTP transport timing |
+| `-allow-http-workers` | `false` | Permit remote HTTP worker origins; also available to `validate` and `ui`; startup permission, never a workload field |
 | `-workers` | empty | Comma-separated worker origins; rate mode only |
 | `-worker-ca` | `GOMETER_WORKER_CA` or system roots | Additional PEM CA for worker HTTPS |
 | `-telemetry` | `true` | Collect telemetry if configured; false disables it |
@@ -113,7 +114,9 @@ or an importable dashboard run bundle.
 | `ui` | `-listen` | `127.0.0.1:8790` | Explicit IP and port; non-loopback requires `-public-origin` |
 | `ui` | `-public-origin` | empty | Exact HTTPS origin for a trusted private ingress; no path prefixes |
 | `ui` | `-data` | `.gometer` | Saved scenarios and history directory |
-| `worker` | `-listen` | `127.0.0.1:8801` | Explicit listen IP and port; non-loopback requires TLS |
+| `ui` | `-allow-http-workers` | `false` | Permit remote HTTP worker control; show a startup warning |
+| `worker` | `-listen` | `127.0.0.1:8801` | Explicit listen IP and port; non-loopback requires TLS or `-allow-http` |
+| `worker` | `-allow-http` | `false` | Permit a non-loopback HTTP listener; token still required |
 | `worker` | `-name` | hostname, or `worker` | Worker display name |
 | `worker` | `-tls-cert` | empty | PEM worker server certificate |
 | `worker` | `-tls-key` | empty | PEM private key for that certificate |
@@ -137,6 +140,8 @@ prefix is `GOMETER_*`; the older `GMETER_*` names are not aliases.
 | `GOMETER_UI_PUBLIC_ORIGIN` | Dashboard | `-public-origin`; default empty; exact HTTPS origin for a private ingress |
 | `GOMETER_UI_DATA` | Dashboard | `-data`; default `.gometer`; relative paths use the process working directory |
 | `GOMETER_WORKER_LISTEN` | Worker | `-listen`; default `127.0.0.1:8801` |
+| `GOMETER_WORKER_ALLOW_HTTP` | Worker | `-allow-http`; default `false`; permit a non-loopback HTTP listener |
+| `GOMETER_ALLOW_HTTP_WORKERS` | Run, validate, dashboard | `-allow-http-workers`; default `false`; independently permit remote HTTP worker origins |
 | `GOMETER_WORKER_NAME` | Worker | `-name`; default hostname, or `worker` |
 | `GOMETER_WORKER_TLS_CERT` | Worker | `-tls-cert`; PEM server certificate path |
 | `GOMETER_WORKER_TLS_KEY` | Worker | `-tls-key`; PEM private key path |
@@ -168,6 +173,16 @@ to clear an inherited file selection for `run`; `validate` requires a nonempty
 configuration path. GoMeter reads process environment variables; it does not
 load `.env` files or expand shell variables inside their values. Existing
 listener, public-origin, and TLS checks also apply to environment settings.
+Boolean variables accept Go boolean values such as `true` or `false`; empty or
+malformed values fail startup unless an explicit flag overrides them. Set
+`-allow-http=false` or `-allow-http-workers=false` to disable an inherited opt-in.
+
+Remote HTTP control needs independent worker and coordinator permission. It sends
+the worker token and test configuration without application TLS. The dashboard
+shows a startup-permission warning and labels HTTP worker configurations/results.
+Saved/imported scenarios and run bundles cannot enable these startup permissions.
+Use a current-source build for the HTTP opt-ins; earlier releases lack them. See
+[optional HTTP control](workers.md#optional-remote-http-control) for setup.
 
 `GOMETER_UI_PUBLIC_ORIGIN` configures the browser origin behind an ingress; the
 dashboard itself serves HTTP. It does not need a server certificate when NGINX

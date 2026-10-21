@@ -74,7 +74,8 @@ GOMETER_WORKER_NAME=worker-1 \
 ```
 
 For HTTPS control, set `GOMETER_WORKER_TLS_CERT` and `GOMETER_WORKER_TLS_KEY` to
-PEM file paths. Remote listeners still require TLS and a valid shared token.
+PEM file paths. Remote listeners require TLS by default and always require a
+valid shared token.
 With the token already supplied, a remote worker can start as:
 
 ```sh
@@ -100,8 +101,8 @@ The current prefix is `GOMETER_*`; `GMETER_*` names are not read. See the comple
 ## Remote control
 
 Workers bind an explicit IP. Loopback is the default. Non-loopback listeners
-require a TLS certificate and private key. Control always requires the token;
-browser-origin control requests are rejected.
+require a TLS certificate and private key by default. Control always requires
+the token; browser-origin control requests are rejected.
 
 ```sh
 ./bin/gometer worker -name worker-1 -listen 0.0.0.0:8801 \
@@ -113,8 +114,9 @@ browser-origin control requests are rejected.
 
 Certificates must verify for the origin's hostname/IP. System certificate roots
 are the default; `-worker-ca` adds a PEM CA. `GOMETER_WORKER_CA` sets the default
-for the CLI and dashboard. Certificate verification cannot be disabled. HTTP
-control is allowed only on literal loopback IPs. Authorization headers never
+for the CLI and dashboard. HTTPS certificate verification cannot be disabled. HTTP
+control on literal loopback IPs works without an opt-in; other HTTP origins require
+the separate startup permissions below. Authorization headers never
 follow redirects. Worker control connects directly; target requests retain their
 usual proxy environment support.
 
@@ -135,6 +137,51 @@ Worker TLS protects dashboard-to-worker connections independently of browser
 HTTPS at NGINX. To run only the dashboard behind that ingress, use the
 [dashboard-only template](kubernetes.md#start-the-dashboard-without-workers);
 it has no worker certificate, CA, or token Secret dependencies.
+
+## Optional remote HTTP control
+
+HTTPS remains the default for remote worker control. To deliberately use HTTP,
+opt in on **both** the worker listener and the coordinator. Each process still
+needs the same valid `GOMETER_WORKER_TOKEN`. HTTP sends that token and the test
+configuration without application TLS; anyone who can observe or alter the
+connection can read credentials or interfere with worker control. Restrict it to
+a network whose protections you operate and accept. Prefer verified HTTPS.
+
+With the shared token already supplied in each process:
+
+```sh
+# Worker: accept non-loopback HTTP.
+GOMETER_WORKER_ALLOW_HTTP=true GOMETER_WORKER_LISTEN=0.0.0.0:8801 \
+  ./bin/gometer worker -name worker-1
+
+# CLI coordinator: independently permit the HTTP origin.
+GOMETER_ALLOW_HTTP_WORKERS=true ./bin/gometer run -config scenario.json \
+  -workers http://worker.example.internal:8801
+
+# Or restart the dashboard with the coordinator permission.
+GOMETER_ALLOW_HTTP_WORKERS=true ./bin/gometer ui
+```
+
+Equivalent flags are `worker -allow-http` and `-allow-http-workers` on
+`run`, `validate`, or `ui`. They default to false. Explicit flags override the
+environment, including `-allow-http=false` and `-allow-http-workers=false`.
+Use a build from current source; older binaries do not support these options.
+
+The worker permission allows its listener to serve HTTP only when **both** TLS
+paths are empty. A partial certificate/key pair or invalid TLS file still fails
+startup. A valid pair still serves HTTPS. The coordinator permission accepts
+HTTP origins; HTTPS URLs still verify certificates and never fall back to HTTP.
+Workload `insecure` and telemetry TLS remain independent.
+
+Startup logs warn about plaintext control. The dashboard shows an operator
+permission banner plus warnings for HTTP configurations and run history. You can
+save or import a configuration that lists HTTP workers, but it cannot grant the
+startup permission: validation and execution check the current coordinator's
+settings. Restart without the opt-in to reject those origins again.
+
+For Kubernetes, the [HTTP worker overlay](kubernetes.md#optional-http-worker-fleet)
+removes worker certificate/key and coordinator worker-CA mounts while preserving
+the shared token and existing VirtualServer routing.
 
 ## Shared schedule and capacity
 

@@ -21,13 +21,14 @@ import (
 )
 
 type Options struct {
-	Token        string
-	CAFile       string
-	Client       *http.Client
-	OnProgress   func(engine.Progress)
-	StartDelay   time.Duration
-	PollInterval time.Duration
-	Telemetry    telemetry.Options
+	AllowHTTPWorkers bool
+	Token            string
+	CAFile           string
+	Client           *http.Client
+	OnProgress       func(engine.Progress)
+	StartDelay       time.Duration
+	PollInterval     time.Duration
+	Telemetry        telemetry.Options
 }
 type node struct {
 	engine.WorkerStatus
@@ -181,6 +182,9 @@ func validateFinal(c config.Config, n *node) error {
 func Run(ctx context.Context, c config.Config, opts Options) (engine.Result, error) {
 	p, err := c.Validate()
 	if err != nil {
+		return engine.Result{}, err
+	}
+	if err := config.ValidateWorkerTransport(c.Workers, opts.AllowHTTPWorkers); err != nil {
 		return engine.Result{}, err
 	}
 	if len(c.Workers) == 0 {
