@@ -40,21 +40,22 @@ spec:
           type: RuntimeDefault
       containers:
         - name: dashboard
-          image: ghcr.io/nicotanzil/gometer:0.6.0
+          # Build this example tag from current source; released 0.6.0 lacks startup env support.
+          image: ghcr.io/nicotanzil/gometer:env-startup
           imagePullPolicy: IfNotPresent
           args:
             - ui
-            - -listen
-            - 0.0.0.0:8790
-            - -public-origin
-            - https://gometer.example.internal
-            - -data
-            - /data
           ports:
             - name: http
               containerPort: 8790
               protocol: TCP
           env:
+            - name: GOMETER_UI_LISTEN
+              value: "0.0.0.0:8790"
+            - name: GOMETER_UI_PUBLIC_ORIGIN
+              value: "https://gometer.example.internal"
+            - name: GOMETER_UI_DATA
+              value: "/data"
             - name: GOMETER_WORKER_TOKEN
               valueFrom:
                 secretKeyRef:

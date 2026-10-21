@@ -1,0 +1,59 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Dashboard, PVC, Service and ingress NetworkPolicy; worker Secrets are not required.
+resources:
+  - ../base
+
+patches:
+  - target:
+      kind: StatefulSet
+      name: gometer-worker
+    patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: gometer-worker
+  - target:
+      kind: Service
+      name: gometer-workers
+    patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: gometer-workers
+  - target:
+      kind: NetworkPolicy
+      name: gometer-workers-dashboard-only
+    patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: gometer-workers-dashboard-only
+  - target:
+      kind: Deployment
+      name: gometer-dashboard
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: gometer-dashboard
+      spec:
+        template:
+          spec:
+            containers:
+              - name: dashboard
+                env:
+                  - name: GOMETER_WORKER_TOKEN
+                    $patch: delete
+                  - name: GOMETER_WORKER_CA
+                    $patch: delete
+                volumeMounts:
+                  - name: worker-ca
+                    $patch: delete
+            volumes:
+              - name: worker-ca
+                $patch: delete

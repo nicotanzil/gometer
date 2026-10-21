@@ -126,6 +126,11 @@ or active job at a time. See [dashboard](dashboard.md) and [workers](workers.md)
 
 ## Environment
 
+These startup variables describe the current source. The released `0.6.0` image
+predates the new `GOMETER_UI_*`, worker listen/name/TLS, and `GOMETER_CONFIG`
+settings; build a current-source image for environment-based startup. The current
+prefix is `GOMETER_*`; the older `GMETER_*` names are not aliases.
+
 | Variable | Read by | Purpose |
 | --- | --- | --- |
 | `GOMETER_UI_LISTEN` | Dashboard | `-listen`; default `127.0.0.1:8790` |
@@ -163,6 +168,14 @@ to clear an inherited file selection for `run`; `validate` requires a nonempty
 configuration path. GoMeter reads process environment variables; it does not
 load `.env` files or expand shell variables inside their values. Existing
 listener, public-origin, and TLS checks also apply to environment settings.
+
+`GOMETER_UI_PUBLIC_ORIGIN` configures the browser origin behind an ingress; the
+dashboard itself serves HTTP. It does not need a server certificate when NGINX
+terminates HTTPS. Worker token/CA settings can be omitted until remote workers
+are used. `GOMETER_CONFIG` does not load a dashboard scenario, and no environment
+variable registers worker URLs; configure those in the builder or scenario.
+See [Kubernetes deployment](kubernetes.md) for container settings, mounted PEM
+paths, and dashboard-only versus worker-fleet templates.
 
 Startup environment settings are read when the command starts; changing them
 requires a restart. The dashboard also captures credential/CA settings at startup.

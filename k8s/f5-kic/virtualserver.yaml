@@ -1,0 +1,21 @@
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServer
+metadata:
+  name: gometer-dashboard
+  namespace: gometer
+# Routing and TLS only; require VPN or authentication at the controller edge.
+spec:
+  ingressClassName: nginx
+  host: gometer.example.internal
+  tls:
+    secret: gometer-dashboard-tls
+    redirect:
+      enable: true
+  upstreams:
+    - name: dashboard
+      service: gometer-dashboard
+      port: 8790
+  routes:
+    - path: /
+      action:
+        pass: dashboard

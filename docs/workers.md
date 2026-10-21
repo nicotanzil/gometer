@@ -75,8 +75,27 @@ GOMETER_WORKER_NAME=worker-1 \
 
 For HTTPS control, set `GOMETER_WORKER_TLS_CERT` and `GOMETER_WORKER_TLS_KEY` to
 PEM file paths. Remote listeners still require TLS and a valid shared token.
+With the token already supplied, a remote worker can start as:
+
+```sh
+GOMETER_WORKER_LISTEN=0.0.0.0:8801 \
+GOMETER_WORKER_NAME=worker-1 \
+GOMETER_WORKER_TLS_CERT=/secure/worker.pem \
+GOMETER_WORKER_TLS_KEY=/secure/worker-key.pem \
+./bin/gometer worker
+```
+
+For workers signed by a private CA, mount its public certificate in the
+coordinator and set `GOMETER_WORKER_CA` before starting `gometer ui` or
+`gometer run`. The dashboard does not need a client certificate. In Kubernetes,
+the templates use the downward API for `GOMETER_WORKER_NAME`; see the
+[startup settings and Secret mappings](kubernetes.md#configure-startup-through-environment-variables).
+
 Flags take precedence over environment settings, including explicit empty flags.
-See the complete [environment reference](cli.md#environment).
+Restart the process after changing its environment. Use a binary built from the
+current source: released `0.6.0` does not support the new startup variables.
+The current prefix is `GOMETER_*`; `GMETER_*` names are not read. See the complete
+[environment reference](cli.md#environment).
 
 ## Remote control
 
@@ -111,6 +130,11 @@ load-balanced Service: the coordinator treats each origin as a distinct worker.
 Mount the shared control token and TLS keypair from Secrets, and mount the CA
 certificate in the dashboard pod for `GOMETER_WORKER_CA`. Restrict worker ingress
 to the dashboard and worker egress to the intended test targets.
+
+Worker TLS protects dashboard-to-worker connections independently of browser
+HTTPS at NGINX. To run only the dashboard behind that ingress, use the
+[dashboard-only template](kubernetes.md#start-the-dashboard-without-workers);
+it has no worker certificate, CA, or token Secret dependencies.
 
 ## Shared schedule and capacity
 

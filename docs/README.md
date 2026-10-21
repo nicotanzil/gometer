@@ -28,7 +28,7 @@ contextual explanations, and troubleshooting.
 | [JMeter JMX import](jmx-import.md) | Guided compatibility review, supported HTTP mappings, and non-runnable migration drafts |
 | [HTTPS](https.md) | Verified defaults, opt-in insecure workload requests, and separate trust settings |
 | [Distributed workers](workers.md) | Tokens, TLS, shared schedules, quotas, cancellation, and unknown traffic |
-| [Kubernetes deployment](kubernetes.md) | Private dashboard ingress, persistent state, and stable worker pod identities |
+| [Kubernetes deployment](kubernetes.md) | Dashboard-only or worker-fleet setup, startup variables, NGINX TLS, Secrets, and persistent state |
 | [Generator diagnostics](diagnostics.md) | Process resources, connection reuse, HTTP timings, and instrumentation limits |
 | [Target-server telemetry](telemetry.md) | Selected exporter series, authentication, gaps, counter resets, and coverage |
 

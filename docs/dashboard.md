@@ -22,6 +22,25 @@ port `0` selects an available port. A non-loopback listener requires
 enforces VPN access or authentication and an allowlist. The default data
 directory is `.gometer/` in the current directory. See [private ingress access](operations.md#private-ingress-access).
 
+With a current-source binary, the equivalent startup can use environment
+variables and leave the command as `gometer ui`:
+
+```sh
+GOMETER_UI_LISTEN=0.0.0.0:8790 \
+GOMETER_UI_PUBLIC_ORIGIN=https://gometer.example.internal \
+GOMETER_UI_DATA=/data \
+./bin/gometer ui
+```
+
+Use an existing writable directory for `/data`, or a PVC in Kubernetes. NGINX
+terminates browser HTTPS and forwards HTTP to port 8790; the dashboard pod needs
+no server certificate. Worker tokens and worker CA files are needed only when
+using remote workers. Leave **Workers** blank to execute on the dashboard host.
+See the [dashboard-only Kubernetes deployment](kubernetes.md#start-the-dashboard-without-workers)
+and [environment reference](cli.md#environment). Explicit flags override these
+variables, and environment changes require a process restart. The current prefix
+is `GOMETER_*`; `GMETER_*` names are not read.
+
 ## App overview
 
 ![Guided test builder and planned workload preview](images/test-builder.jpg)

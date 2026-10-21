@@ -2,57 +2,49 @@
 
 [Documentation](README.md) · [Project overview](../README.md)
 
-GoMeter can run as a private dashboard coordinator with a fixed group of worker
-pods. The dashboard is single-user; this layout is for a trusted operator behind
-a VPN or an ingress that enforces authentication and an allowlist. The app does
-not provide user accounts or role-based access.
+GoMeter can run as one dashboard pod, with workers added when distributed load
+is needed. The dashboard is single-user; use a VPN or NGINX access controls
+that authenticate and allowlist users. It stores scenarios and history as JSON files
+on a persistent volume; no database is required.
 
-## Pod layout
+## Certificates for the dashboard and workers
 
-- Run one dashboard pod as a Deployment with a persistent volume mounted at
-  `/data`. Keep it at one replica; workspace files have no cross-process lock.
-- Run workers as a fixed-replica StatefulSet behind a headless Service. Use each
-  worker pod's stable DNS name as a separate worker origin. A load-balanced
-  Service does not provide GoMeter with distinct worker identities.
-- Route the private ingress to an internal ClusterIP Service. Terminate browser
-  TLS at the ingress, preserve the browser's `Host` and `Origin`, and route from
-  `/` without a path prefix. The pod-to-ingress network path should be restricted
-  to the ingress controller.
-- Give the dashboard and workers the same `GOMETER_WORKER_TOKEN`. Mount worker
-  TLS certificates and keys from Secrets. Mount the issuing CA in the dashboard
-  and set `GOMETER_WORKER_CA` to its file path.
-- Restrict worker ingress to the dashboard. Restrict worker egress to DNS and
-  the approved test targets. The targets must be reachable from every worker.
-
-The dashboard command for a private TLS-terminating ingress has this shape:
-
-```sh
-gometer ui -listen 0.0.0.0:8790 \
-  -public-origin https://gometer.example.internal \
-  -data /data
-```
-
-The public origin must be the exact HTTPS origin users open in the browser. The
-worker certificate must verify for every configured worker DNS name. For a
-StatefulSet named `gometer-worker` and a headless Service named `gometer-workers`,
-the origins are similar to:
+For a dashboard behind an NGINX VirtualServer that terminates HTTPS,
+the dashboard hostname certificate is installed at NGINX. The dashboard pod
+serves HTTP and does not need its own TLS certificate or private key:
 
 ```text
-https://gometer-worker-0.gometer-workers.gometer.svc.cluster.local:8801
-https://gometer-worker-1.gometer-workers.gometer.svc.cluster.local:8801
-https://gometer-worker-2.gometer-workers.gometer.svc.cluster.local:8801
+Browser -- HTTPS --> NGINX -- HTTP :8790 --> dashboard pod
 ```
 
-Enter one origin per line in the dashboard's **Workers** field. GoMeter does not
-discover StatefulSet replicas. If the replica count changes, update the worker
-list as well. Distributed workers currently support rate mode only.
+Set `GOMETER_UI_PUBLIC_ORIGIN` to the exact HTTPS origin opened in the browser.
+This configures Host/Origin validation and secure download cookies; it does not
+enable TLS in the dashboard process. Preserve the browser's Host and Origin,
+route `/` without a path prefix, and restrict pod access to the ingress
+controller. A public DNS name and TLS certificate do not provide user login.
+
+| Connection | Certificate and trust configuration |
+| --- | --- |
+| Browser to NGINX | Dashboard hostname certificate/key at NGINX, for example the `gometer-dashboard-tls` Secret |
+| NGINX to dashboard pod | HTTP on port 8790; no dashboard pod certificate |
+| Dashboard to remote workers, when used | Worker server certificate/key; dashboard trusts the issuer through `GOMETER_WORKER_CA` or available system roots |
+
+A dashboard-only install does not need `GOMETER_WORKER_TOKEN`,
+`GOMETER_WORKER_CA`, `gometer-worker-token`, `gometer-worker-tls`, or
+`gometer-worker-ca`. The full fleet template references these Secrets, so use
+[`k8s/dashboard-only`](../k8s/dashboard-only) to start without workers.
 
 ## Configure startup through environment variables
 
-An image built from the source containing environment-based startup can use
-`args: ["ui"]` with these dashboard container settings:
+Current-source templates use `args: ["ui"]` for the dashboard and
+`args: ["worker"]` for workers. Startup settings use **explicit flag → environment
+variable → built-in default**. Remove the corresponding flag if an environment
+variable should control it.
+
+Dashboard container settings:
 
 ```yaml
+args: ["ui"]
 env:
   - name: GOMETER_UI_LISTEN
     value: "0.0.0.0:8790"
@@ -62,160 +54,258 @@ env:
     value: "/data"
 ```
 
-Retain the data volume mount, worker token Secret, and worker CA settings from
-the base template. Configuration can come from a ConfigMap via `envFrom` or
-`valueFrom`; tokens and private keys belong in Secrets. A worker can similarly
-use `args: ["worker"]` with `GOMETER_WORKER_LISTEN`, `GOMETER_WORKER_NAME`,
-`GOMETER_WORKER_TLS_CERT`, and `GOMETER_WORKER_TLS_KEY`. The two TLS variables are
-paths to mounted PEM files. To use the pod name, assign `GOMETER_WORKER_NAME`
-through the downward API with `fieldPath: metadata.name`.
+Worker container settings, when workers are used:
 
-Flags take precedence, so remove the corresponding argument when an environment
-variable should control it. Update the pod template and roll out new pods after
-changing environment settings; a ConfigMap change does not update a running
-process's environment. The origin, authentication, and TLS requirements are the
-same with either configuration method.
+```yaml
+args: ["worker"]
+env:
+  - name: GOMETER_WORKER_LISTEN
+    value: "0.0.0.0:8801"
+  - name: GOMETER_WORKER_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  - name: GOMETER_WORKER_TLS_CERT
+    value: "/etc/gometer/worker-tls/tls.crt"
+  - name: GOMETER_WORKER_TLS_KEY
+    value: "/etc/gometer/worker-tls/tls.key"
+  - name: GOMETER_WORKER_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: gometer-worker-token
+        key: token
+```
 
-The checked-in templates retain flags for their released `0.6.0` image. That
-release does not support the new startup variables. Use an image built from this
-feature's source revision before converting those arguments to environment
-settings. This guide does not claim a cluster deployment has been verified.
+The TLS variables are paths to mounted PEM files. The downward API supplies each
+worker's pod name directly; `POD_NAME` and argument substitution are unnecessary.
 
-## Access and recovery boundaries
+| Variable | Where to set it | Kubernetes value or purpose |
+| --- | --- | --- |
+| `GOMETER_UI_LISTEN` | Dashboard | `0.0.0.0:8790` so the Service can reach it |
+| `GOMETER_UI_PUBLIC_ORIGIN` | Dashboard | Exact browser origin, such as `https://gometer.example.internal`; no path prefix |
+| `GOMETER_UI_DATA` | Dashboard | `/data`, backed by the PVC |
+| `GOMETER_WORKER_LISTEN` | Workers | `0.0.0.0:8801`; non-loopback requires TLS |
+| `GOMETER_WORKER_NAME` | Workers | `metadata.name` through the downward API |
+| `GOMETER_WORKER_TLS_CERT` | Workers | Mounted server certificate PEM path |
+| `GOMETER_WORKER_TLS_KEY` | Workers | Mounted private key PEM path |
+| `GOMETER_WORKER_TOKEN` | Dashboard and workers, for distributed runs | Same token from `gometer-worker-token` on both sides |
+| `GOMETER_WORKER_CA` | Dashboard, for a private worker CA | Mounted issuer CA certificate path, such as `/etc/gometer/worker-ca/ca.crt` |
+| `GOMETER_TELEMETRY_TOKEN` | Dashboard, if exporter bearer auth is configured | Exporter credential supplied through a Secret |
+| `GOMETER_TELEMETRY_CA` | Dashboard, if the exporter uses a private CA | Mounted exporter CA certificate path |
 
-The origin check binds requests to the configured ingress host. It is not user
-authentication. Require the VPN or ingress to authenticate and allowlist users;
-restrict direct access to the dashboard Service so clients cannot bypass that
-gate. Do not expose the dashboard directly to the public internet.
+The current variable prefix is `GOMETER_*`; older `GMETER_*` names are not read.
+There is no environment variable that discovers or registers workers. Enter
+worker URLs in **Build → Execution & diagnostics → Workers**, one per line, or
+in the scenario's `workers` list. `GOMETER_CONFIG` applies to `run` and `validate`;
+it does not load a dashboard scenario at startup. See the complete
+[environment reference](cli.md#environment).
 
-Keep the dashboard at one replica with one private persistent volume. Back up the
-whole `/data` directory and practice a restore. A worker restart loses its active
-job and in-memory result, so a run can finish incomplete with unknown traffic.
-Update worker pods between runs and preserve GoMeter's graceful SIGTERM window.
+Configuration can come from a ConfigMap via `envFrom` or `valueFrom`; tokens and
+private keys belong in Secrets. GoMeter reads process environment variables,
+without loading `.env` files or expanding shell expressions in their values.
+Applying a changed pod-template `env` rolls out new pods. After changing values
+in an existing ConfigMap or Secret used as environment variables, restart the
+relevant workloads between runs:
 
-Worker network egress needs deliberate controls because a configured workload
-can send traffic to the chosen target. Allow only approved targets and required
-DNS. Resource limits also affect generator capacity; record requests/limits and
-monitor CPU throttling, memory, and network headroom for every run.
+```sh
+kubectl -n gometer rollout restart deployment/gometer-dashboard
+# Only for an installed worker fleet:
+kubectl -n gometer rollout restart statefulset/gometer-worker
+```
 
-## Example manifests for F5 NGINX Ingress Controller
+Startup variables are read when the process starts. A ConfigMap update does not
+replace the environment of a running container. See Kubernetes' guide to
+[container environment variables](https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/).
 
-The repository includes a starting point in [`k8s/base`](../k8s/base) and a
-separate [`k8s/f5-kic`](../k8s/f5-kic) overlay. The base creates one dashboard,
-a 10 GiB PVC, three fixed workers, their headless Service, and NetworkPolicies
-that limit dashboard and worker control traffic. The overlay adds HTTPS ingress
-and an F5 NGINX access-control policy.
+## Build an image that supports these variables
 
-These files are templates. Before applying them:
+The templates use `ghcr.io/nicotanzil/gometer:env-startup` as an example tag that
+you build and push from this source checkout. It is not a published release
+claim. The released `0.6.0` image predates the new startup variables; using it
+with `args: ["ui"]` or `args: ["worker"]` ignores those settings and keeps the
+old defaults. Build the current source before applying these templates:
 
-1. Build and push a Linux image to a registry your cluster can read. For GitHub
-Container Registry, authenticate Docker with a GitHub token that has package
-write permission, then build from the repository root:
+```sh
+docker buildx build --platform linux/amd64 \
+  --build-arg VERSION=0.6.0-dev \
+  --tag ghcr.io/nicotanzil/gometer:env-startup \
+  --push .
+```
 
-   ```sh
-   docker buildx build --platform linux/amd64 \
-     --build-arg VERSION=0.6.0 \
-     --tag ghcr.io/nicotanzil/gometer:0.6.0 \
-     --push .
-   ```
+Use a registry you can publish to and your cluster can read. For ARM nodes,
+select `--platform linux/amd64,linux/arm64`. Replace the image reference in
+`k8s/base/dashboard.yaml` and `k8s/base/workers.yaml` if you choose a different
+tag; use a new tag or digest for subsequent builds. For a private registry,
+configure an image-pull Secret in both pod specs. To retain released `0.6.0`,
+continue passing its `-listen`, `-public-origin`, `-data`, `-name`, `-tls-cert`,
+and `-tls-key` flags instead of relying on the new startup variables.
 
-   If your cluster has ARM nodes, use
-   `--platform linux/amd64,linux/arm64`. The Dockerfile builds for both
-   architectures. For a private GHCR package, configure an image-pull Secret
-   for the namespace and reference it from both pod specs.
+## Prepare the VirtualServer and storage
 
-2. The dashboard and worker manifests use
-   `ghcr.io/nicotanzil/gometer:0.6.0`. Change the image in both files if you
-   publish a different version. Change `gometer.example.internal` in the
-   dashboard arguments and `k8s/f5-kic/ingress.yaml` to your actual HTTPS
-   hostname. The default resource requests and limits are starting points;
-   measure capacity under your real workloads before relying on them.
+The examples use namespace `gometer`, one dashboard Deployment with a 10 GiB
+PVC mounted at `/data`, and an internal ClusterIP Service. Keep the dashboard at
+one replica; workspace files have no cross-process lock. Make sure your cluster
+can provision the PVC and permit UID/GID 65532 to write to it.
 
-3. Replace `192.0.2.0/24` in `k8s/f5-kic/access-policy.yaml` with the source
-   CIDR that the F5 controller sees for VPN clients. The documentation range
-   intentionally does not match real users, so access stays denied until you
-   replace it. Confirm the observed client source address with your cluster
-   network setup; NAT or forwarded-client settings can change it. This policy
-   requires F5 NGINX Ingress Controller's `k8s.nginx.org/v1` Policy CRD and
-   policy support. The `ingressClassName` must match your installed IngressClass.
+Change `GOMETER_UI_PUBLIC_ORIGIN` in `k8s/base/dashboard.yaml` and the host in
+`k8s/f5-kic/virtualserver.yaml` to the same browser origin. Use your installed
+IngressClass. DNS must point to the NGINX controller.
 
-   The base NetworkPolicy also denies direct dashboard traffic unless both the
-   NGINX controller namespace and its pod template carry the label
-   `gometer-ingress-controller: "true"`. Inspect your controller's namespace
-   and pod labels, then persist this label on its namespace and in its Helm
-   values or Deployment template. This makes the Service reachable only from
-   the designated controller; the Ingress policy separately limits browser
-   clients to the VPN source CIDRs.
+The dashboard NetworkPolicy permits port 8790 only from controller pods whose
+namespace and pod template both carry `gometer-ingress-controller: "true"`.
+Persist that label on the controller namespace and in its Helm values or pod
+template. A Service or VirtualServer alone does not restrict direct pod access.
+Your network plugin must enforce NetworkPolicy for this rule to have effect.
 
-4. Prepare certificates. `gometer-dashboard-tls` must cover the dashboard
-   hostname. `gometer-worker-tls` must contain a certificate whose SAN covers
-   each worker pod DNS name (a wildcard such as
-   `*.gometer-workers.gometer.svc.cluster.local` works with the default cluster
-   domain). `gometer-worker-ca` contains the CA that issued that worker
-   certificate. If your cluster uses a different DNS domain, use it in the
-   certificate and in each worker origin entered in the dashboard.
+The supplied VirtualServer routes traffic but does not authenticate users or
+allowlist client IPs. Keep the hostname behind your VPN or existing controller
+access controls before exposing it. If you already have a VirtualServer for
+this hostname, add the dashboard upstream and `/` route there instead of
+creating a second VirtualServer with the same host.
 
-   The image does not include a system CA bundle. The `gometer-worker-ca`
-   Secret only verifies dashboard-to-worker connections. Before workers test
-   HTTPS targets, provide a trust bundle containing the required public and
-   organization roots to the worker pods, or rebuild the image with that
-   bundle.
+## Start the dashboard without workers
 
-5. Create the namespace and Secrets. Keep these files and token values out of
-   Git:
+For a new install, render and apply the dashboard-only template. It includes
+the namespace, PVC, Deployment, ClusterIP Service and dashboard NetworkPolicy,
+without worker resources or worker Secret references:
 
-   ```sh
-   kubectl apply -f k8s/base/namespace.yaml
-   kubectl -n gometer create secret generic gometer-worker-token \
-     --from-literal=token="$(openssl rand -hex 32)"
-   kubectl -n gometer create secret tls gometer-worker-tls \
-     --cert=worker.crt --key=worker.key
-   kubectl -n gometer create secret generic gometer-worker-ca \
-     --from-file=ca.crt=worker-ca.crt
-   kubectl -n gometer create secret tls gometer-dashboard-tls \
-     --cert=dashboard.crt --key=dashboard.key
-   ```
+```sh
+kubectl kustomize k8s/dashboard-only
+kubectl apply -k k8s/dashboard-only
+```
 
-6. Render the files locally, then install and check the base and ingress:
+If your VirtualServer already has a valid hostname certificate, keep that
+certificate at NGINX. Otherwise, create the Secret it will reference:
 
-   ```sh
-   kubectl kustomize k8s/base
-   kubectl apply -k k8s/base
-   kubectl kustomize k8s/f5-kic
-   kubectl apply -k k8s/f5-kic
-   kubectl -n gometer get pods,services,ingress,networkpolicy
-   kubectl -n gometer describe ingress gometer-dashboard
-   ```
+```sh
+kubectl -n gometer create secret tls gometer-dashboard-tls \
+  --cert=dashboard.crt --key=dashboard.key
+```
 
-   Check that F5 reports the Ingress as accepted and the `gometer-dashboard-vpn`
-   Policy as valid. DNS for the hostname must point to the ingress controller,
-   and the controller must have a route from the VPN. The ingress forwards the
-   root path and uses the exact host passed to the dashboard's `-public-origin`.
+Point the VirtualServer's upstream to `gometer-dashboard:8790` over HTTP and
+forward `/`. The supplied [`virtualserver.yaml`](../k8s/f5-kic/virtualserver.yaml)
+has this shape:
 
-7. In the dashboard's **Workers** field, enter one URL per worker:
+```yaml
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServer
+metadata:
+  name: gometer-dashboard
+  namespace: gometer
+spec:
+  ingressClassName: nginx
+  host: gometer.example.internal
+  tls:
+    secret: gometer-dashboard-tls
+    redirect:
+      enable: true
+  upstreams:
+    - name: dashboard
+      service: gometer-dashboard
+      port: 8790
+  routes:
+    - path: /
+      action:
+        pass: dashboard
+```
 
-   ```text
-   https://gometer-worker-0.gometer-workers.gometer.svc.cluster.local:8801
-   https://gometer-worker-1.gometer-workers.gometer.svc.cluster.local:8801
-   https://gometer-worker-2.gometer-workers.gometer.svc.cluster.local:8801
-   ```
+If you do not have an existing VirtualServer for this hostname, edit the
+supplied file's host and IngressClass, then apply it with
+`kubectl -n gometer apply -f k8s/f5-kic/virtualserver.yaml`. Its TLS Secret
+must be in the same namespace. This follows the official
+[F5 VirtualServer reference](https://docs.nginx.com/nginx-ingress-controller/configuration/virtualserver-and-virtualserverroute-resources/).
 
-   The pod DNS names must match the worker certificate SANs. If you scale the
-   StatefulSet, update this list to match. Do not replace the headless Service
-   with a load-balanced worker Service.
+Do not apply `k8s/f5-kic` for this dashboard-only path: that overlay includes the
+worker fleet. Applying the dashboard-only template does not delete
+worker resources from an earlier full-fleet install.
 
-The optional F5 overlay uses an access-control policy to allow only the stated
-VPN CIDRs. If you use an identity provider instead, configure and test an
-F5-supported external-auth policy for your installed controller version before
-exposing the Ingress. The app itself has no user accounts. Do not expose it to
-the public internet without an access gate.
+Check the dashboard rollout and the accepted NGINX resource, then open its HTTPS
+hostname. Leave **Workers** blank for local execution:
 
-The sample NetworkPolicies restrict dashboard ingress to labeled controller
-pods and worker ingress to the dashboard pod. They do not constrain worker
-egress because allowed test targets vary by deployment. Add egress rules for
-DNS and the approved target ranges in your cluster. Verify that your cluster's
-network plugin enforces NetworkPolicy resources.
+```sh
+kubectl -n gometer rollout status deployment/gometer-dashboard
+kubectl -n gometer get pods,services,pvc,networkpolicy
+kubectl -n gometer describe virtualserver gometer-dashboard
+```
+
+## Add the worker fleet
+
+The full [`k8s/base`](../k8s/base) template adds three workers in a StatefulSet,
+a headless Service, and a NetworkPolicy for incoming worker traffic. The F5
+[`k8s/f5-kic`](../k8s/f5-kic) overlay includes that base plus the supplied
+VirtualServer.
+
+Workers need TLS certificates covering their configured pod DNS names. With the
+default cluster domain, the example shared worker certificate can cover
+`*.gometer-workers.gometer.svc.cluster.local`, or explicitly list each pod DNS
+name as a SAN. Mount only the issuing CA's public certificate in the dashboard;
+keep the CA private key with the issuer. `GOMETER_WORKER_CA` is a trust file,
+not a dashboard client certificate. Remote worker authentication also requires
+the same `GOMETER_WORKER_TOKEN` on both sides.
+
+Create the worker Secrets before applying the full template. The token is
+created once and the dashboard and workers reference that same Secret:
+
+```sh
+kubectl apply -f k8s/base/namespace.yaml
+kubectl -n gometer create secret generic gometer-worker-token \
+  --from-literal=token="$(openssl rand -hex 32)"
+kubectl -n gometer create secret tls gometer-worker-tls \
+  --cert=worker.crt --key=worker.key
+kubectl -n gometer create secret generic gometer-worker-ca \
+  --from-file=ca.crt=worker-ca.crt
+```
+
+With your existing VirtualServer, apply `k8s/base` to add workers:
+
+```sh
+kubectl kustomize k8s/base
+kubectl apply -k k8s/base
+```
+
+If you need to create the supplied VirtualServer, apply `k8s/f5-kic` instead;
+it already includes the base:
+
+```sh
+kubectl kustomize k8s/f5-kic
+kubectl apply -k k8s/f5-kic
+```
+
+Check the worker StatefulSet rollout and enter one origin per worker in
+**Build → Execution & diagnostics → Workers**:
+
+```text
+https://gometer-worker-0.gometer-workers.gometer.svc.cluster.local:8801
+https://gometer-worker-1.gometer-workers.gometer.svc.cluster.local:8801
+https://gometer-worker-2.gometer-workers.gometer.svc.cluster.local:8801
+```
+
+The DNS names must match certificate SANs; adjust them if your namespace,
+StatefulSet, Service or cluster domain differs. GoMeter does not discover
+replicas: update the list when you scale. Use distinct pod origins rather than
+one load-balanced worker Service. Distributed workers support rate mode only.
+
+## Trust, updates and recovery
+
+The scratch image does not include a system CA bundle. Starting the dashboard
+and displaying the UI does not require one. Executing verified HTTPS workloads
+from the dashboard or workers requires the appropriate public/organization root
+bundle in those pods. The worker CA Secret verifies only dashboard-to-worker
+control connections; it does not configure trust for workload HTTPS targets or
+telemetry exporters.
+
+The example NetworkPolicies restrict dashboard ingress to labeled controller
+pods and worker ingress to the dashboard. Add egress rules for DNS and approved
+test targets; the templates leave egress open because targets vary. Local runs
+originate from the dashboard, so its egress also needs to reach approved targets.
+The default CPU/memory requests and limits are starting points; measure real
+capacity and observe throttling and memory headroom.
+
+Change ConfigMaps, Secrets, certificates and images between runs, then restart
+the affected workloads. Preserve the 60-second graceful SIGTERM window. A worker
+restart loses its active job and in-memory result; an incomplete run can have
+unknown traffic. Back up the whole dashboard `/data` directory and practice a
+restore. These templates have not been verified in a live cluster.
 
 See [security](../SECURITY.md), [operations](operations.md), and
-[distributed workers](workers.md) for the runtime boundaries and recovery
-limits.
+[distributed workers](workers.md) for runtime and recovery boundaries.

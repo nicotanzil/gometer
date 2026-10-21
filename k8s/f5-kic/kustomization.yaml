@@ -4,5 +4,4 @@ kind: Kustomization
 namespace: gometer
 resources:
   - ../base
-  - access-policy.yaml
-  - ingress.yaml
+  - virtualserver.yaml
