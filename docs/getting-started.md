@@ -8,8 +8,8 @@ does not start the demo or send test traffic.
 
 ## 1. Build from source
 
-Prerequisites: a source checkout and Go 1.24 or newer. The Go module has no
-third-party dependencies. Make is optional; there is no frontend installation
+Prerequisites: a source checkout and Go 1.27.3 or newer. Go modules download the
+PostgreSQL and OIDC dependencies. Make is optional; there is no frontend installation
 or asset build step. A compiled GoMeter binary needs neither Go nor Node.js.
 
 From the repository root on macOS or Linux:

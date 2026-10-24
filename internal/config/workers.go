@@ -59,6 +59,35 @@ func workerOrigin(raw string) (*url.URL, error) {
 	return u, nil
 }
 
+// NormalizeWorkerOrigin identifies equivalent origins without granting transport permission.
+func NormalizeWorkerOrigin(raw string) (string, error) {
+	u, err := workerOrigin(raw)
+	if err != nil {
+		return "", err
+	}
+	host := strings.TrimSuffix(strings.ToLower(u.Hostname()), ".")
+	if host == "" {
+		return "", fmt.Errorf("worker URL must contain a hostname or IP")
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		host = ip.String()
+	}
+	port := u.Port()
+	if port != "" {
+		n, _ := strconv.Atoi(port)
+		port = strconv.Itoa(n)
+	}
+	if (u.Scheme == "https" && port == "443") || (u.Scheme == "http" && port == "80") {
+		port = ""
+	}
+	if port != "" {
+		host = net.JoinHostPort(host, port)
+	} else if strings.Contains(host, ":") {
+		host = "[" + host + "]"
+	}
+	return (&url.URL{Scheme: u.Scheme, Host: host}).String(), nil
+}
+
 func (c Config) validateWorkers() error {
 	if len(c.Workers) == 0 {
 		return nil
@@ -68,19 +97,10 @@ func (c Config) validateWorkers() error {
 	}
 	seen := map[string]bool{}
 	for i, raw := range c.Workers {
-		u, err := workerOrigin(raw)
+		key, err := NormalizeWorkerOrigin(raw)
 		if err != nil {
 			return fmt.Errorf("workers[%d]: %w", i, err)
 		}
-		port := u.Port()
-		if port == "" {
-			if u.Scheme == "https" {
-				port = "443"
-			} else {
-				port = "80"
-			}
-		}
-		key := u.Scheme + "://" + net.JoinHostPort(strings.ToLower(u.Hostname()), port)
 		if seen[key] {
 			return fmt.Errorf("worker origins must be unique")
 		}

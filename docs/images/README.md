@@ -2,22 +2,33 @@
 
 [Documentation](../README.md) · [Project overview](../../README.md)
 
-These are real captures of the embedded dashboard from the development checkout
-on 21 October 2026. They show the approved Variant A workspace, Open Scope logo,
+These are real captures of the embedded dashboard from the development checkout.
+The result image and worker catalog capture are from 23 October 2026; the other captures are from
+21 October 2026. They show the approved Variant A workspace, Open Scope logo,
 compact system typography, neutral surfaces and expanded/collapsed navigation.
 The captures include local uncommitted work and do not represent a tagged release.
 
-The walkthrough and result image use a separate bundled-demo process with a
-private temporary workspace: 160 completed HTTP attempts, no request errors or
-missed arrivals, and passing checks. These are illustrative local measurements,
-not performance benchmarks. No private hosts, user data or supplied workload
+The walkthrough uses a separate bundled-demo process with a private temporary
+workspace: 160 completed HTTP attempts, no request errors or missed arrivals,
+and passing checks. The result image uses the counted local fixture in
+`internal/dashboard/test/results-browser.cjs`: 60 completed HTTP attempts over
+three seconds, no errors or missed arrivals, and six passing checks. It shows
+the outcome and latency summaries with expandable checks and interactive charts.
+The worker catalog capture uses two disposable loopback worker processes: one has a
+dated successful connection observation and the other has not been checked.
+Registration and connection checks sent no workload; the verifier later completed
+20 independently counted requests across both workers.
+These are illustrative local measurements, not performance benchmarks.
+No private hosts, user data or supplied workload
 credentials appear in the assets.
 
 | Asset | State | Capture |
 | --- | --- | --- |
 | [walkthrough.gif](walkthrough.gif) | Validated builder → real run → saved verdict and charts | 1440 × 960; 11.38 seconds; looping GIF, 376 KiB |
 | [test-builder.jpg](test-builder.jpg) | Local API baseline, planned demand and saved scenario | Full page, 1440 × 1515 |
-| [run-results.jpg](run-results.jpg) | Completed baseline, checks and workload charts | Viewport, 1440 × 1360 |
+| [tests-library.png](tests-library.png) | Personal-mode Tests foundation: real saved definitions, revisions and independent copies | Viewport, 1440 × 1000 |
+| [worker-catalog.jpg](worker-catalog.jpg) | Two named local workers, registration form, connection status and setup help | Viewport, 1440 × 1100 |
+| [run-results.jpg](run-results.jpg) | Completed counted baseline, outcome/latency summaries and interactive charts | Viewport, 1440 × 1360 |
 | [user-guide.jpg](user-guide.jpg) | First-test instructions and practice settings | Viewport, 1440 × 960 |
 | [journey-canvas.png](journey-canvas.png) | Checkout journey, Login inspector and data dependencies | Full page, 1440 × 1266 |
 | [journey-flow.png](journey-flow.png) | Nested branches/loops and Browse twice inspector | App full-screen canvas, 1600 × 1200 |
@@ -49,3 +60,27 @@ counted journeys, comparison, JMX review and the CSV dialog.
 
 The README and documentation index use these relative paths. Refresh the media
 when navigation or the visual system changes.
+
+To refresh only the result image, run `internal/dashboard/test/results-browser.cjs`
+with `GOMETER_RESULTS_SCREENSHOT` set to the absolute output image path. Set
+`GOMETER_BINARY` to a rebuilt executable, plus `PLAYWRIGHT_MODULE` and
+`CHROME_PATH` when needed. The verifier creates temporary fixture servers and a
+private workspace, verifies the failed and passing runs, captures the passing
+view, and stops its processes. It never uses the user's saved test history.
+
+To reproduce the worker catalog image, run
+`internal/dashboard/test/workers-browser.cjs` with `GOMETER_WORKERS_SCREENSHOT`
+set to an absolute `.jpg` or `.png` path. It uses two private local worker
+processes, a temporary dashboard workspace, and an independently counted target.
+The image is captured before workload execution. The same verifier checks
+selection, restart, shared browser access, immutable run identities, old bundles,
+and that an unavailable worker never causes a local fallback. Use the same
+`GOMETER_BINARY`, `PLAYWRIGHT_MODULE`, and `CHROME_PATH` settings as above.
+
+The Tests library image was captured on 23 October 2026 by
+`internal/dashboard/test/definitions-browser.cjs` with
+`GOMETER_TESTS_SCREENSHOT` set to the absolute output path. It shows actual
+personal-mode records after two-session conflict and copy checks. This fixture
+sends no workload and contains no real team identities or credentials. The image
+does not imply that PostgreSQL, OIDC, managed secrets or the queue are implemented.
+Older captures retain the navigation present on their capture dates.

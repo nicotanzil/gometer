@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 module.exports = async function verifyWorkspaceScreens(page) {
   async function navigate(view) {
     if (await page.locator('#navigation-open').isVisible()) await page.locator('#navigation-open').click();
-    await page.locator(`.sidebar [data-view="${view}"]`).click();
+    await page.locator(`.sidebar [data-view="${view==='build'?'tests':view}"]`).click();if(view==='build')await page.locator('#test-resume').click();
   }
   await navigate('history');
   const choices = page.locator('#history .history-select:not([disabled])');

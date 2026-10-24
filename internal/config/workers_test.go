@@ -63,3 +63,18 @@ func TestScenarioStrideMatchesGlobalOrdinals(t *testing.T) {
 		t.Fatalf("large skipped range lost assigned scenario: %v", got)
 	}
 }
+
+func TestWorkerOriginsHaveStableCanonicalIdentity(t *testing.T) {
+	for _, group := range [][]string{
+		{"https://worker.example", "https://WORKER.example:443/", "https://worker.example.:0443"},
+		{"http://127.0.0.1", "http://127.0.0.1:80/", "http://[::ffff:127.0.0.1]:080/"},
+		{"https://[::1]:9443", "https://[0:0:0:0:0:0:0:1]:09443/"},
+	} {
+		for _, origin := range group {
+			key, err := NormalizeWorkerOrigin(origin)
+			if err != nil || key != group[0] {
+				t.Fatalf("canonical %q: %q %v", origin, key, err)
+			}
+		}
+	}
+}

@@ -96,7 +96,7 @@
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     });
     document.addEventListener('gometer:viewchange', event => {
-      const label = {build:'Build',jmx:'JMeter import',live:'Live',history:'History',guide:'Guide',coverage:'Coverage'}[event.detail];
+      const label = {tests:'Tests',build:'Tests / Editor',jmx:'JMeter import',live:'Live',history:'Runs',workers:'Workers',guide:'Guide',coverage:'Coverage'}[event.detail];
       document.getElementById('current-view-label').textContent = label || 'Workspace';
       if (mobile.matches && open) {
         closeDrawer(false);

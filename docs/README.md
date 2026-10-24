@@ -27,7 +27,8 @@ contextual explanations, and troubleshooting.
 | [CSV datasets](datasets.md) | Import files, map variables, share rows and stop or recycle at EOF |
 | [JMeter JMX import](jmx-import.md) | Guided compatibility review, supported HTTP mappings, and non-runnable migration drafts |
 | [HTTPS](https.md) | Verified defaults, opt-in insecure workload requests, and separate trust settings |
-| [Distributed workers](workers.md) | Tokens, TLS, shared schedules, quotas, cancellation, and unknown traffic |
+| [Distributed workers](workers.md) | Named catalog, connection checks, tokens, TLS, shared schedules, quotas, and unknown traffic |
+| [Team backend foundations](team-workspace.md) | PostgreSQL commands, Keycloak/LDAP integration boundary, implemented checks and pending team HTTP work |
 | [Kubernetes deployment](kubernetes.md) | Dashboard-only or worker-fleet setup, startup variables, NGINX TLS, Secrets, and persistent state |
 | [Generator diagnostics](diagnostics.md) | Process resources, connection reuse, HTTP timings, and instrumentation limits |
 | [Target-server telemetry](telemetry.md) | Selected exporter series, authentication, gaps, counter resets, and coverage |

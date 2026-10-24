@@ -11,7 +11,7 @@ module.exports = async function verifyNavigation(page) {
   assert.ok((await page.locator('main').boundingBox()).width > expanded.width + 100);
   await page.locator('.sidebar [data-view=history]').focus();
   await page.locator('#navigation-tooltip').waitFor({state:'visible'});
-  assert.equal(await page.locator('#navigation-tooltip').innerText(), 'History');
+  assert.equal(await page.locator('#navigation-tooltip').innerText(), 'Runs');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#navigation-tooltip').isVisible(), false);
   await page.locator('.sidebar [data-view=guide]').hover();
@@ -58,7 +58,7 @@ module.exports = async function verifyNavigation(page) {
     await page.keyboard.press('Escape');
     assert.equal(await opener.evaluate(e => e === document.activeElement), true);
     await opener.click();
-    await page.locator('.sidebar [data-view=build]').click();
+    await page.locator('.sidebar [data-view=tests]').click();await page.locator('#test-resume').click();
   }
   // Resizing while the drawer is open must restore desktop navigation and editing.
   await page.locator('#navigation-open').click();

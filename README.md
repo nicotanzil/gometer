@@ -19,7 +19,7 @@ Node.js, or external frontend assets are required at runtime.
 
 ## Quick start
 
-Install **Go 1.24 or newer**, then build from a source checkout:
+Install **Go 1.27.3 or newer**, then build from a source checkout:
 
 ```sh
 go build -o bin/gometer ./cmd/gometer
@@ -84,7 +84,7 @@ HTML reports are saved under `results/`.
 | JMeter import | Guided compatibility review and conversion of supported JMeter 5.6.3 HTTP plans; unsupported behavior blocks runnable conversion; [import scope](docs/jmx-import.md) |
 | Results | Live charts, history, two-run comparison, JSON/HTML reports, and portable run bundles |
 | Diagnostics | Generator resources, arrival delay, connection reuse, HTTP timings, and selected Prometheus exporter gauges and counters |
-| Distributed runs | Authenticated workers, shared rate schedules, concurrency quotas, and incomplete-result detection; rate mode only; [worker guide](docs/workers.md) |
+| Distributed runs | Reusable named worker catalog, manual connection checks, shared rate schedules, concurrency quotas, and incomplete-result detection; rate mode only; [worker guide](docs/workers.md) |
 
 <details>
 <summary>Screenshots</summary>
@@ -113,6 +113,13 @@ Configure requests, traffic, and acceptance checks before starting a run.
 
 ![GoMeter test builder with request, traffic, checks, and planned demand](docs/images/test-builder.jpg)
 
+### Worker catalog
+
+Register named load generators, inspect dated connection observations, and
+select workers when building a test.
+
+![GoMeter worker catalog with reusable generators and manual connection checks](docs/images/worker-catalog.jpg)
+
 ### Results
 
 Review traffic, latency, errors, missed arrivals, and acceptance checks.
@@ -127,7 +134,7 @@ Follow the first-test walkthrough or find help with settings and results.
 
 </details>
 
-All captures use the bundled demo. The measurements are examples, not benchmarks.
+Captures use the bundled demo and disposable local test fixtures. The measurements are examples, not benchmarks.
 [Capture notes](docs/images/README.md).
 
 ## Measurement model

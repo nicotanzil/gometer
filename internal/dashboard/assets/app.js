@@ -2,9 +2,9 @@
 
 const $ = id => document.getElementById(id);
 const token = document.querySelector('meta[name="gometer-token"]').content;
-let examples = [], library = [], runs = [], current = null, selectedScenario = '', activeID = '', view = 'build';
+let examples = [], library = [], runs = [], current = null, selectedScenario = '', selectedRevision = 0, activeID = '', view = 'build';
 let selectedRuns = new Set(), timer = null, polling = false, telemetryFormError = '', builderFormError = '', journeyFormError = '';
-let coverage = [];
+let coverage = [], editorBaseline = '';
 const fmt = (value, digits = 1) => Number(value || 0).toLocaleString(undefined, {maximumFractionDigits: digits, minimumFractionDigits: digits});
 const count = value => Number(value || 0).toLocaleString();
 const errorActions = {next_iteration:'Start next iteration',continue:'Continue journey',stop_user:'Stop this user',stop_test:'Stop test gracefully',stop_test_now:'Stop test immediately'};
@@ -22,8 +22,8 @@ function placePlanPreview() {
 stackedBuilder.addEventListener('change', placePlanPreview);
 placePlanPreview();
 
-async function api(path, method = 'GET', body) {
-  const options = {method, headers: {'X-Gometer-Token': token}};
+async function api(path, method = 'GET', body, headers = {}) {
+  const options = {method, headers: {'X-Gometer-Token': token, ...headers}};
   if (body !== undefined) { options.headers['Content-Type'] = 'application/json'; options.body = typeof body === 'string' ? body : JSON.stringify(body); }
   const response = await fetch(path, options);
   if (!response.ok) {
@@ -35,6 +35,16 @@ async function api(path, method = 'GET', body) {
 
 function notice(message, bad = false) { $('notice').textContent = message; $('notice').className = bad ? 'bad' : ''; $('notice').hidden = false; }
 function validateMessage(message, kind = '') { $('validation').textContent = message; $('validation').className = `validation ${kind}`; }
+const workerCatalog = GoMeterWorkers.create({api, onChange: () => updateBuilder(), show: () => showView('workers')});
+const testsLibrary = GoMeterTests.create({api, resume:()=>showView('build'), newTest:()=>{
+ if (builderFormError||telemetryFormError||journeyFormError||$('config-json').value!==editorBaseline){notice('Save or finish your current draft before creating a new test. Your current work has been kept.',true);return;}
+ setEditor(examples[0].config);showView('build');
+},open:async(id,copy=false)=>{
+ if (builderFormError||telemetryFormError||journeyFormError||$('config-json').value!==editorBaseline){notice('Save or finish your current draft before switching tests. Use Resume draft to continue editing.',true);return;}
+ let saved=await(await api('/api/scenarios/'+id)).json();
+ if(copy)saved=await(await api('/api/scenarios/'+id+'/copy','POST',undefined,{'If-Match':JSON.stringify(String(saved.revision))})).json();
+ setEditor(saved.config,saved.id,saved.revision);showView('build');await refresh();
+}});
 const csvImport = GoMeterCSV.create({api});
 const journeyEditor = GoMeterJourneyEditor.create($('journey-canvas'), {
   read: () => { if (builderFormError || telemetryFormError) throw new Error(builderFormError || telemetryFormError); return readEditor(true); },
@@ -49,7 +59,7 @@ const journeyEditor = GoMeterJourneyEditor.create($('journey-canvas'), {
 const runJourneyEditor = GoMeterJourneyEditor.create($('run-journey-canvas'), {readonly:true});
 const jmxImport = GoMeterJMX.create($('view-jmx'), {
   api, show:()=>showView('jmx'), close:()=>showView('build'), help:()=>openGuide('guide-jmx'), refresh,
-  load:(config,id)=>{setEditor(config,id);showView('build');notice('Imported scenario loaded. Review it before starting a run.');}
+  load:async(config,id)=>{try{const saved=await(await api('/api/scenarios/'+id)).json();setEditor(saved.config,id,saved.revision);showView('build');notice('Imported scenario loaded. Review it before starting a run.');}catch(error){notice(error.message,true);}}
 });
 $('import-jmx').addEventListener('click',()=>jmxImport.open());
 function showBuilderTab(tab) {
@@ -67,14 +77,15 @@ $('plan-mobile-toggle').addEventListener('click', () => {
 });
 function showView(next) {
   view = next; $('notice').hidden = true;
-  for (const name of ['build', 'jmx', 'live', 'history', 'guide', 'coverage']) $('view-' + name).hidden = name !== next;
+  for (const name of ['tests', 'build', 'jmx', 'live', 'history', 'workers', 'guide', 'coverage']) $('view-' + name).hidden = name !== next;
   for (const e of document.querySelectorAll('.nav')) {
-    const selected = e.dataset.view === next || next==='jmx'&&e.dataset.view==='build';
+    const selected = e.dataset.view === next || ['build','jmx'].includes(next)&&e.dataset.view==='tests';
     e.classList.toggle('active', selected);
     if (selected) e.setAttribute('aria-current', 'page'); else e.removeAttribute('aria-current');
   }
   document.dispatchEvent(new CustomEvent('gometer:viewchange', {detail: next}));
   window.scrollTo(0, 0);
+  if(next==='tests')testsLibrary.refresh().catch(e=>notice(e.message,true));
   if (next === 'history') refresh().catch(e => notice(e.message, true));
   if (next === 'live' && current) requestAnimationFrame(drawCharts);
   if (next === 'build' && !$('journey-canvas').hidden) journeyEditor.show();
@@ -119,10 +130,11 @@ function readEditor(ignoreTelemetryError = false) {
   if (!c || Array.isArray(c) || typeof c !== 'object') throw new Error('The configuration must be a JSON object.');
   return c;
 }
-function setEditor(config, id = '') {
+function setEditor(config, id = '', revision) {
+  if (id !== selectedScenario) selectedRevision = revision || 0; else if (revision) selectedRevision = revision;
   selectedScenario = id;
   $('config-json').value = JSON.stringify(config, null, 2);
-  syncForm(config, true);
+  syncForm(config, true); editorBaseline = $('config-json').value;
   showBuilderTab(config.scenarios?.length ? 'journey' : 'settings');
   validateMessage('Configuration changed. Validate or start a run.');
   $('save-scenario').textContent = id ? 'Update scenario' : 'Save scenario';
@@ -158,7 +170,7 @@ function syncForm(c, replaceJourneyDraft = false) {
   $('traffic-options').open = stages || !!c.ramp_up || !!c.startup_delay || !!c.on_error;
   renderHeaderRows(c.headers || {}); renderStageRows(c.stages || []); updatePreview(c);
   $('diagnostics').value = c.diagnostics === false ? 'false' : 'true';
-  $('workers').value = (c.workers || []).join('\n');
+  workerCatalog.load(c.workers || [], c.mode || 'users');
   $('telemetry-url').value=c.telemetry?.url||''; $('telemetry-interval').value=c.telemetry?.interval||'1s'; $('telemetry-timeout').value=c.telemetry?.timeout||'1s'; $('telemetry-auth').value=c.telemetry?.bearer_auth?'true':'false';
   $('telemetry-metrics').value=JSON.stringify(c.telemetry?.metrics||[{name:'process_cpu_seconds_total',kind:'counter',unit:'seconds',title:'Server CPU time'},{name:'go_memstats_heap_alloc_bytes',kind:'gauge',unit:'bytes',title:'Server Go heap'}],null,2);
   $('rate-label').textContent = journey ? 'Journeys / second' : 'Requests / second';
@@ -280,7 +292,7 @@ function updateBuilder() {
       if (input.validity.badInput) throw new Error('Enter a number or leave the pass criterion blank.');
       c.thresholds[key] = value ? Number(value) : null;
     }
-    const workers = $('workers').value.split(/[\n,]/).map(x => x.trim()).filter(Boolean);
+    const workers = workerCatalog.origins();
     if (workers.length) c.workers = workers; else delete c.workers;
     builderFormError = ''; $('config-json').value = JSON.stringify(c, null, 2);
     journeyEditor.load(c);
@@ -356,7 +368,7 @@ function updatePreview(c) {
   if (!list.childElementCount) list.append(node('p', 'No pass criteria enabled.', 'helper'));
   checks.append(list); $('plan-preview').append(checks);
 }
-for (const id of ['name','url','method','duration','iterations','timeout','rate','vus','capacity','distribution','diagnostics','workers','body','success-statuses','insecure','think-time','ramp-up','startup-delay','on-error','threshold-p95','threshold-errors','threshold-drops','threshold-rps']) $(id).addEventListener('input', updateBuilder);
+for (const id of ['name','url','method','duration','iterations','timeout','rate','vus','capacity','distribution','diagnostics','body','success-statuses','insecure','think-time','ramp-up','startup-delay','on-error','threshold-p95','threshold-errors','threshold-drops','threshold-rps']) $(id).addEventListener('input', updateBuilder);
 $('stop-condition').addEventListener('change', () => { syncStoppingFields(); updateBuilder(); });
 $('add-header').addEventListener('click', () => { addHeaderRow(); $('header-rows').lastElementChild.querySelector('input').focus(); });
 $('staged').addEventListener('change', () => {
@@ -418,8 +430,8 @@ $('view-active').addEventListener('click', async () => {
 async function saveScenario(copy = false) {
   const id = copy ? '' : selectedScenario;
   try {
-    const saved = await (await api(id ? `/api/scenarios/${id}` : '/api/scenarios', id ? 'PUT' : 'POST', readEditor())).json();
-    selectedScenario = saved.id; $('save-scenario').textContent = 'Update scenario'; $('save-copy').hidden = false;
+    const saved = await (await api(id ? `/api/scenarios/${id}` : '/api/scenarios', id ? 'PUT' : 'POST', readEditor(), id ? {'If-Match': JSON.stringify(String(selectedRevision))} : {})).json();
+    selectedScenario = saved.id; selectedRevision = saved.revision; editorBaseline = $('config-json').value; $('save-scenario').textContent = 'Update scenario'; $('save-copy').hidden = false;
     await refresh(); notice('Scenario saved to the local library.');
   } catch (e) { notice(e.message, true); }
 }
@@ -449,7 +461,7 @@ $('file-input').addEventListener('change', async () => {
 
 async function refresh() {
   const state = await (await api('/api/state')).json(); library = state.scenarios; runs = state.runs;
-  renderLibrary(); renderHistory();
+  renderLibrary(); renderHistory(); workerCatalog.updateCatalog(state.workers || []);
   renderMigrations(state.migrations||[]);
   const running = state.current && active(state.current);
   activeID = running ? state.current.id : '';
@@ -464,14 +476,21 @@ function renderLibrary() {
   $('library').replaceChildren(...library.map(s => {
     const item = node('div', undefined, 'library-item'), button = node('button', s.name || 'HTTP test');
     button.type = 'button'; button.addEventListener('click', async () => {
-      try { const saved = await (await api(`/api/scenarios/${s.id}`)).json(); setEditor(saved.config, s.id); showView('build'); notice('Saved scenario loaded into the editor.'); } catch (e) { notice(e.message, true); }
+      try { const saved = await (await api(`/api/scenarios/${s.id}`)).json(); setEditor(saved.config, s.id, saved.revision); showView('build'); notice('Saved scenario loaded into the editor.'); } catch (e) { notice(e.message, true); }
     });
     const remove = node('button', 'Delete', 'text-button'); remove.type = 'button';
     remove.addEventListener('click', async () => {
       if (!confirm('Delete this saved scenario? Run results will remain.')) return;
       try { await api(`/api/scenarios/${s.id}`, 'DELETE'); if (selectedScenario === s.id) setEditor(readEditor()); await refresh(); notice('Scenario deleted.'); } catch (e) { notice(e.message, true); }
     });
-    item.append(button, node('small', `${s.workload === 'journeys' ? 'Journeys' : 'Requests'} · ${s.mode} mode`), remove);
+    const copy = node('button', 'Use a copy', 'text-button'); copy.type='button';
+    copy.addEventListener('click', async () => {
+      if (builderFormError || telemetryFormError || journeyFormError || $('config-json').value !== editorBaseline) { notice('Save or finish your current draft before opening a copy. Your current work has been kept.', true); return; }
+      copy.disabled=true;
+      try { const saved=await(await api(`/api/scenarios/${s.id}/copy`,'POST',undefined,{'If-Match':JSON.stringify(String(s.revision))})).json();setEditor(saved.config,saved.id,saved.revision);await refresh();showView('build');notice('Independent test copy saved. The original test is unchanged.'); }
+      catch(error){notice(error.message,true);}finally{copy.disabled=false;}
+    });
+    item.append(button, node('small', `${s.workload === 'journeys' ? 'Journeys' : 'Requests'} · ${s.mode} mode · Revision ${s.revision || 1}`), copy, remove);
     if(s.imported_jmx){const source=node('button','Review original JMX','text-button jmx-source-link');source.type='button';source.addEventListener('click',async()=>{try{const saved=await(await api(`/api/scenarios/${s.id}`)).json();await jmxImport.open({...saved.migration,name:saved.name});notice('Reviewing the original JMX. Subsequent builder edits are not part of this source plan.');}catch(e){notice(e.message,true);}});item.append(source);}
     return item;
   }));
@@ -554,6 +573,7 @@ function renderRun() {
   $('results-panel').hidden = !run.result;
   $('run-journey-canvas').hidden = !run.result?.scenarios?.length;
   if (!$('run-journey-canvas').hidden) runJourneyEditor.loadRun(run);
+  GoMeterResults.renderOverview($('result-overview'), run);
   if (run.result) renderResults(run.result);
   renderDiagnostics(run, latest, r, traffic);
   renderWorkers(run,latest);
@@ -645,7 +665,10 @@ function renderDiagnostics(run, latest, request, traffic) {
   }
 }
 function renderResults(result) {
-  $('checks').replaceChildren(...result.checks.map(c => node('span', `${c.passed ? '✓' : '×'} ${c.name.replaceAll('_', ' ')} · ${fmt(c.actual, 2)} / ${fmt(c.limit, 2)} ${c.unit}`, `check-item${c.passed ? '' : ' bad'}`)));
+  GoMeterResults.renderChecks($('checks'), result.checks || [], result);
+  const failed = (result.checks || []).filter(c => !c.passed).length;
+  $('checks-summary').textContent = `${count((result.checks || []).length - failed)} passed · ${count(failed)} failed${failed ? ' · Failed checks shown first' : ''}`;
+  if ($('checks-details').dataset.run !== current.id) { $('checks-details').open = failed > 0; $('checks-details').dataset.run = current.id; }
   $('scenario-results').replaceChildren(...(result.scenarios || []).map(s => {
     const section = node('div', undefined, 'step-section');
     const dataset = result.datasets?.find(d=>d.scenario===s.name);
@@ -653,7 +676,7 @@ function renderResults(result) {
     section.append(node('h3', s.name), node('p', `${count(s.journeys.completed)} journeys · ${fmt(s.journeys.error_percent, 2)}% errors · ${s.journeys.latency.samples ? fmt(s.journeys.latency.p95_ms) + ' ms p95' : 'no latency samples'} · ${s.checks?.length ? (s.passed ? 'checks passed' : 'checks failed') : 'no scenario checks'}`));
     const rows = s.steps.map(step => [step.name, step.method, count(step.completed), count(step.skipped) + (step.skipped_condition ? ` (${count(step.skipped_condition)} conditional)` : ''), step.completed ? fmt(step.error_percent, 2) + '%' : '—', step.latency.samples ? fmt(step.latency.p95_ms) + ' ms' : '—']);
     const wrap = node('div', undefined, 'table-wrap'); wrap.append(makeTable(['Step', 'Method', 'Attempts', 'Skipped journeys', 'Errors', 'p95'], rows)); section.append(wrap);
-    if (s.checks?.length) section.append(...s.checks.map(c => node('span', `${c.passed ? '✓' : '×'} ${c.name.replaceAll('_', ' ')} · ${fmt(c.actual, 2)} / ${fmt(c.limit, 2)} ${c.unit}`, `check-item${c.passed ? '' : ' bad'}`)));
+    if (s.checks?.length) { const checks = node('div'); GoMeterResults.renderChecks(checks, s.checks, s.journeys); section.append(checks); }
     return section;
   }));
 }
@@ -667,7 +690,7 @@ function downloadURL(path, filename) {
 
 // Counter deltas are interval measurements. Histogram quantiles are cumulative.
 function chartData(run) {
-  const values = {traffic: [], journeys: [], target: [], p95: [], p50: [], errors: [], drops: []};
+  const values = {traffic: [], journeys: [], target: [], p95: [], p50: [], p99: [], errors: [], drops: []};
   run.samples.forEach((s, index) => {
     const x = s.elapsed_seconds, prev = run.samples[index - 1], r = s.requests || {}, traffic = run.workload === 'journeys' ? (s.journeys || {}) : r;
     const dt = prev ? x - prev.elapsed_seconds : 0, pr = prev?.requests || {}, pt = run.workload === 'journeys' ? (prev?.journeys || {}) : pr;
@@ -680,50 +703,15 @@ function chartData(run) {
       values.drops.push([x, scheduled > 0 ? 100 * drops / scheduled : null]);
     }
     values.target.push([x, run.config.mode === 'rate' ? (s.draining ? 0 : s.target_rate) : null]);
-    values.p95.push([x, r.latency?.samples ? r.latency.p95_ms : null]); values.p50.push([x, r.latency?.samples ? r.latency.p50_ms : null]);
+    values.p95.push([x, r.latency?.samples ? r.latency.p95_ms : null]); values.p50.push([x, r.latency?.samples ? r.latency.p50_ms : null]); values.p99.push([x, r.latency?.samples ? r.latency.p99_ms : null]);
   });
   return values;
 }
 const colors = {teal: '#087f75', blue: '#527bca', gray: '#94a5af', red: '#bd3c45', amber: '#b27b14'};
 function drawChart(id, series, xEnd, fixedMax, xStart = 0, signed = false) {
-  const canvas = $(id), width = canvas.clientWidth, height = canvas.clientHeight;
-  if (!width) return;
-  const ratio = window.devicePixelRatio || 1; canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
-  const ctx = canvas.getContext('2d'); ctx.scale(ratio, ratio);
-  const theme = getComputedStyle(document.documentElement);
-  const grid = theme.getPropertyValue('--chart-grid').trim();
-  const axis = theme.getPropertyValue('--chart-axis').trim();
-  const left = 42, right = width - 12, top = 12, bottom = height - 25;
-  const values=series.flatMap(s=>s.points.map(p=>p[1])).filter(v=>v!==null&&v!==undefined&&Number.isFinite(v));
-  let min=signed?Math.min(0,...values)*1.15:0;
-  let max = fixedMax || Math.max(signed?0:1, ...values) * 1.15;
-  if (max<=min) max=min+1;
-  ctx.font = '10px ' + theme.getPropertyValue('--font-mono').trim(); ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const y = bottom - (bottom - top) * i / 4;
-    ctx.strokeStyle = grid; ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
-    ctx.fillStyle = axis; ctx.textAlign = 'right'; ctx.fillText(fmt(min+(max-min)*i/4,signed&&max-min<5?3:(max<5?1:0)), left - 8, y + 3);
-  }
-  xEnd = Math.max(xStart + 1, xEnd);
-  const X = x => left + (x - xStart) / (xEnd - xStart) * (right - left), Y = y => bottom - ((signed?y:Math.max(0,y))-min)/(max-min)*(bottom-top);
-  ctx.fillStyle = axis; ctx.textAlign = 'center';
-  for (let i = 0; i <= 4; i++) { const x = xStart + (xEnd - xStart) * i / 4; ctx.fillText(fmt(x, xEnd > 10 ? 0 : 1) + 's', X(x), height - 6); }
-  let visiblePoints = 0;
-  for (const s of series) {
-    ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.setLineDash(s.dashed ? [4, 4] : []); ctx.beginPath(); let previous = null;
-    for (const point of s.points) {
-      if (point[1] === null || point[1] === undefined) { previous = null; continue; }
-      visiblePoints++;
-      if (previous) { if (s.step) ctx.lineTo(X(point[0]), Y(previous[1])); ctx.lineTo(X(point[0]), Y(point[1])); }
-      else ctx.moveTo(X(point[0]), Y(point[1]));
-      previous = point;
-    }
-    ctx.stroke(); ctx.setLineDash([]);
-    const available = s.points.filter(p => p[1] !== null && p[1] !== undefined);
-    if (available.length === 1) { ctx.beginPath(); ctx.arc(X(available[0][0]), Y(available[0][1]), 3, 0, Math.PI * 2); ctx.fillStyle = s.color; ctx.fill(); }
-  }
-  if (!visiblePoints) { ctx.fillStyle = axis; ctx.textAlign = 'center'; ctx.fillText('Waiting for measurements', (left + right) / 2, (top + bottom) / 2); }
+  GoMeterResults.drawChart($(id), series, {xEnd, fixedMax, xStart, signed, scope:current.id, empty:current.result ? 'No recorded measurements' : 'Waiting for measurements'});
 }
+
 function duration(value) {
   const match = String(value).matchAll(/([0-9]*\.?[0-9]+)(ns|us|µs|μs|ms|s|m|h)/g);
   let seconds = 0; for (const m of match) seconds += Number(m[1]) * ({ns: 1e-9, us: 1e-6, 'µs': 1e-6, 'μs': 1e-6, ms: .001, s: 1, m: 60, h: 3600}[m[2]]); return seconds;
@@ -733,11 +721,12 @@ function drawCharts() {
   const theme = getComputedStyle(document.documentElement);
   for (const name of Object.keys(colors)) colors[name] = theme.getPropertyValue(`--chart-${name}`).trim();
   const v = chartData(current), end = current.samples.at(-1)?.elapsed_seconds || 1, start = current.samples[0]?.elapsed_seconds || 0;
-  const traffic = [{points: v.traffic, color: colors.teal}, {points: v.target, color: colors.gray, dashed: true, step: true}];
-  if (current.workload === 'journeys') traffic.push({points: v.journeys, color: colors.blue});
+  const traffic = [{name:'HTTP attempts/s', unit:'req/s', points:v.traffic, color:colors.teal}];
+  if (current.config.mode === 'rate') traffic.push({name:'Target arrivals/s', unit:current.workload === 'journeys' ? 'journeys/s' : 'req/s', points:v.target, color:colors.gray, dashed:true, step:true});
+  if (current.workload === 'journeys') traffic.push({name:'Journeys/s', unit:'journeys/s', points:v.journeys, color:colors.blue});
   drawChart('traffic-chart', traffic, end, null, start);
-  drawChart('latency-chart', [{points: v.p95, color: colors.teal}, {points: v.p50, color: colors.blue}], end, null, start);
-  drawChart('errors-chart', [{points: v.errors, color: colors.red}, {points: v.drops, color: colors.amber}], end, 100, start);
+  drawChart('latency-chart', [{name:'p50', unit:'ms', points:v.p50, color:colors.blue}, {name:'p95', unit:'ms', points:v.p95, color:colors.teal}, {name:'p99', unit:'ms', points:v.p99, color:colors.amber, dashed:true}], end, null, start);
+  drawChart('errors-chart', [{name:'Request errors', unit:'%', points:v.errors, color:colors.red}, {name:'Missed arrivals', unit:'%', points:v.drops, color:colors.amber}], end, 100, start);
   const phases = current.config.stages?.length ? current.config.stages : [{name: current.config.name, duration: current.config.duration, rate: current.config.rate}];
   let offset = 0, phasePoints = [];
   $('phase-list').replaceChildren(...phases.map(p => {
@@ -761,10 +750,10 @@ function drawCharts() {
     const observed = current.samples.map(s=>[s.elapsed_seconds,s.user_schedule?.users.active ?? null]);
     $('phase-list').replaceChildren(node('span',`Planned user starts (gray) · observed active users (blue, sampled) · ${fmt(delay)}s startup · ${fmt(ramp)}s ramp${users>200?' · plan simplified to 200 points':''}`));
     $('phase-chart').setAttribute('aria-label','Planned user starts and sampled active users over wall time');
-    drawChart('phase-chart', [{points:plannedUsers,color:colors.gray,dashed:true,step:true},{points:observed,color:colors.blue,step:true}], Math.max(horizon,end) || 1);
+    drawChart('phase-chart', [{name:'Planned user starts',unit:'users',points:plannedUsers,color:colors.gray,dashed:true,step:true},{name:'Observed active users',unit:'users',points:observed,color:colors.blue,step:true}], Math.max(horizon,end) || 1);
   } else {
     $('phase-chart').setAttribute('aria-label','Configured phase targets over elapsed time');
-    drawChart('phase-chart', [{points: phasePoints, color: colors.teal, step: true}], current.planned_seconds || offset || 1);
+    drawChart('phase-chart', [{name:current.config.mode === 'users' ? 'Configured users' : 'Target arrivals/s',unit:current.config.mode === 'users' ? 'users' : current.workload === 'journeys' ? 'journeys/s' : 'req/s',points:phasePoints,color:colors.teal,step:true}], current.planned_seconds || offset || 1);
   }
   if (!$('generator-panel').hidden) {
     const cpu=[],heap=[],memory=[];
@@ -774,8 +763,8 @@ function drawCharts() {
       heap.push([sample.elapsed_seconds,r ? r.heap_bytes/1048576 : null]);
       memory.push([sample.elapsed_seconds,r ? r.runtime_bytes/1048576 : null]);
     }
-    drawChart('cpu-chart',[{points:cpu,color:colors.teal}],end,null,start);
-    drawChart('memory-chart',[{points:heap,color:colors.teal},{points:memory,color:colors.blue}],end,null,start);
+    drawChart('cpu-chart',[{name:'Process CPU',unit:'%',points:cpu,color:colors.teal}],end,null,start);
+    drawChart('memory-chart',[{name:'Allocated heap',unit:'MiB',points:heap,color:colors.teal},{name:'Mapped by Go runtime',unit:'MiB',points:memory,color:colors.blue}],end,null,start);
   }
   drawTelemetryChart();
 }
@@ -786,7 +775,7 @@ function drawTelemetryChart() {
   const values=points.map(p=>{const v=p.values[index], value=m.kind==='counter'?v?.rate:v?.value; return [p.elapsed_seconds,value===undefined?null:(m.unit==='bytes'?value/1048576:value)];});
   $('telemetry-unit').textContent=(m.unit==='bytes'?'MiB':m.unit||'units')+(m.kind==='counter'?'/s · observed':' · sampled');
   const end=Math.max(current.samples.at(-1)?.elapsed_seconds||1,points.at(-1)?.elapsed_seconds||1);
-  drawChart('telemetry-chart',[{points:values,color:colors.blue}],end,null,points[0]?.elapsed_seconds||0,true);
+  drawChart('telemetry-chart',[{name:m.title||m.name,unit:(m.unit==='bytes'?'MiB':m.unit||'units')+(m.kind==='counter'?'/s':''),points:values,color:colors.blue}],end,null,points[0]?.elapsed_seconds||0,true);
 }
 window.addEventListener('resize', () => requestAnimationFrame(drawCharts));
 window.addEventListener('gometer:layoutchange', () => { if (view === 'live') requestAnimationFrame(drawCharts); });
@@ -809,6 +798,7 @@ function renderHistory() {
       if (checkbox.checked) selectedRuns.add(r.id); else selectedRuns.delete(r.id); updateCompare();
     });
     const label = node('div', r.name || 'HTTP test'); label.append(node('small', new Date(r.created_at).toLocaleString()));
+    if (r.worker_snapshots?.length) label.append(node('small', 'Workers: ' + r.worker_snapshots.map(w => `${w.name} (${w.origin})`).join(', ')));
     const actions = node('div');
     const open = node('button', 'View', 'text-button'); open.addEventListener('click', async () => { try { await loadRun(r.id); showView('live'); } catch (e) { notice(e.message, true); } });
     const reuse = node('button', 'Reuse', 'text-button'); reuse.addEventListener('click', async () => { try { const c = await (await api(`/api/runs/${r.id}/config`)).json(); setEditor(c); showView('build'); notice('Run configuration loaded.'); } catch (e) { notice(e.message, true); } });
@@ -926,7 +916,7 @@ async function initialize() {
     setEditor(examples[0].config);
     $('load-practice').disabled = false;
     await refresh();
-    if (activeID) { showView('live'); schedulePoll(); }
+    if (activeID) { showView('live'); schedulePoll(); } else showView('tests');
   } catch (e) { notice('Cannot load the local workspace: ' + e.message, true); }
 }
 initialize();

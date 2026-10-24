@@ -157,7 +157,7 @@ async function main() {
     assert.equal(await page.locator('#run-journey-canvas input').count(),1,'Results must have only the navigation toggle, no editing fields.');
     assert.match(await page.locator('#run-journey-canvas .je-footer').innerText(),/20 completed journeys/);
     // Deliberate verification failure must show subsequent steps skipped with no fake latency.
-    await page.locator('.nav[data-view="build"]').click();
+    await page.locator('.nav[data-view="tests"]').click();await page.locator('#test-resume').click();
     const failed=structuredClone(config);failed.scenarios[0].steps[0].assertions[0].equals='deliberate mismatch';
     await load(failed);await action('Start run').click();
     await page.waitForFunction(()=>document.querySelector('#run-status').textContent==='FAILED',null,{timeout:20000});
@@ -165,7 +165,7 @@ async function main() {
     await page.locator('#run-journey-canvas .je-outline-step').filter({hasText:'Profile'}).click();
     assert.match(await page.locator('#run-journey-canvas .je-inspector').innerText(),/No latency samples/);
     // Edit executable controls entirely through the visual editor.
-    await page.locator('.nav[data-view="build"]').click();await load(config);await request('Login');
+    await page.locator('.nav[data-view="tests"]').click();await page.locator('#test-resume').click();await load(config);await request('Login');
     await action('+ Branch').click();await edit('Condition variable','item');await edit('Comparison value','coffee');
     let changed=await read();assert.equal(changed.scenarios[0].steps[1].if.condition.variable,'item');assert.equal(changed.scenarios[0].steps[1].if.condition.value,'coffee');
     await action('+ True loop').click();await edit('Repeat count','3');await edit('Iteration variable','visit');

@@ -36,11 +36,69 @@ With that environment variable set in each terminal:
 ./bin/gometer ui
 ```
 
-In the dashboard, enter worker origins in **Workers**, one per line, or load
-**Distributed local smoke test**. Leave the field blank for local execution.
-Validation contacts neither workers nor targets. Starting performs preflight
-and reservation. The dashboard must inherit its token when it starts; changing
-another shell's environment cannot update an already running process.
+In the dashboard, open **Workers** in the sidebar and register each generator
+with a name and its HTTP(S) origin. Then open **Build → Execution & diagnostics**,
+choose **Selected workers**, and select names. Choose **This machine** for local
+execution. The **Distributed local smoke test** starter also loads worker origins.
+The dashboard must inherit its token when it starts; changing another shell's
+environment cannot update an already running process.
+
+## Reusable worker catalog
+
+![Worker catalog with named generators and dated connection observations](images/worker-catalog.jpg)
+
+The catalog is shared by browsers connected to the same dashboard. Up to 200
+entries are stored under `workers/` in the configured workspace
+(`-data` / `GOMETER_UI_DATA`) using atomic writes. Each entry has a stable ID,
+name, origin, and optional dated connection observation. Refresh catalog reads
+saved entries without contacting workers. Back up the workspace to retain them.
+
+Register an origin such as `https://worker.example:8801`, without a path,
+credentials, query, or fragment. Equivalent origins, including hostname case,
+trailing slash, and default ports, cannot be registered twice. Editing keeps the
+entry ID; changing its origin clears its previous connection observation.
+Registration does not start a process, contact a worker, or grant permission to
+use HTTP. Worker tokens and private CA configuration remain startup settings;
+there are no credential fields in catalog entries or exported configurations.
+
+**Check connection** makes one authenticated backend `GET /v1/info` request. It
+sends no target traffic and creates no reservation. The UI distinguishes:
+
+| Observation | Meaning |
+| --- | --- |
+| Not checked | No observation for this origin |
+| Reachable · idle | Supported authenticated worker status received; no reservation reported |
+| Busy | Worker reported a reservation or active run |
+| Unreachable | Connection, DNS lookup, or timeout failed |
+| Authentication failed | Startup token is missing/invalid, or the worker rejected authentication |
+| TLS / transport failed | Certificate/CA, transport, or remote HTTP permission needs attention |
+| Incompatible response | Address did not return the supported GoMeter worker status format |
+
+A timestamp records when the observation finished. It can become stale and
+remains dated after dashboard restart. A reachable observation is not a promise
+of capacity, target connectivity, clock synchronization, or future availability.
+Validation stays offline. Starting a run performs the existing preflight and
+reservation against **every** selected origin. It never silently skips a selected
+worker or changes execution to local when a worker fails.
+
+Configurations still store `workers` as an array of origins. Loading an old
+scenario, imported configuration, draft, or historical run preserves its exact
+origins. Unregistered or removed entries appear as **From this configuration**
+and stay selected; **Register** is an explicit action. Editing/removing a catalog
+entry does not rewrite existing configurations or change active runs. Choose a
+new entry or deselect the old origin explicitly when changing a test.
+
+A new dashboard run captures the selected origins plus available catalog IDs and
+names in `worker_snapshots`. History and Run + timeline bundles retain that
+identity even after catalog changes. Older bundles without this optional metadata
+remain importable. Importing a bundle does not register workers. The CLI continues
+to accept origin arrays independently of the dashboard catalog.
+
+Each distributed run supports at most 32 workers, in **Fixed arrivals** mode,
+with at least one concurrency slot per worker. Empty worker selections block
+builder actions until a worker is selected or **This machine** is chosen. Catalog
+size is separate from the per-run limit. There is no automatic discovery,
+scheduling, grouping, health polling, failover, or load rebalancing.
 
 Worker origins can also be part of a configuration:
 
@@ -126,8 +184,8 @@ distribution remain your setup's responsibility. Each worker receives the target
 configuration, including headers, bodies, and data rows.
 
 For Kubernetes, use a fixed-replica StatefulSet and a headless Service so each
-worker has a stable per-pod DNS name. Enter each worker's HTTPS pod DNS name in
-the coordinator's Workers field. Do not point multiple worker entries at one
+worker has a stable per-pod DNS name. Register each worker's HTTPS pod origin in
+the dashboard catalog and select those entries for a test. Do not point multiple worker entries at one
 load-balanced Service: the coordinator treats each origin as a distinct worker.
 Mount the shared control token and TLS keypair from Secrets, and mount the CA
 certificate in the dashboard pod for `GOMETER_WORKER_CA`. Restrict worker ingress

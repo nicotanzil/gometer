@@ -14,7 +14,7 @@ function setup(){
 }
 
 test('G sequences navigate with a hint, case-insensitively, and never start traffic',()=>{
-  for(const [key,view] of Object.entries({b:'build',l:'live',h:'history',g:'guide',c:'coverage'})){
+  for(const [key,view] of Object.entries({t:'tests',b:'build',l:'live',h:'history',w:'workers',g:'guide',c:'coverage'})){
     const p=setup();assert.equal(p.press('G',{shiftKey:true}).defaultPrevented,true);assert.equal(p.hints.at(-1),true);
     assert.equal(p.press(key.toUpperCase(),{shiftKey:true}).defaultPrevented,true);assert.deepEqual(p.actions,[view]);assert.equal(p.hints.at(-1),false);
   }

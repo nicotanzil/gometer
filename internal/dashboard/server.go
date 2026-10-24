@@ -39,6 +39,7 @@ type Options struct {
 }
 
 type Server struct {
+	workerChecking   map[string]bool
 	allowHTTPWorkers bool
 	mu               sync.Mutex
 	store            *store
@@ -123,7 +124,7 @@ func New(ctx context.Context, dir, host, origin string, opts Options) (*Server, 
 	if err != nil {
 		return nil, err
 	}
-	return &Server{allowHTTPWorkers: opts.AllowHTTPWorkers, store: saved, ctx: ctx, token: token, host: host, origin: origin, secureCookie: strings.HasPrefix(origin, "https://"), exports: map[string]configExport{}, workerToken: os.Getenv("GOMETER_WORKER_TOKEN"), workerCA: os.Getenv("GOMETER_WORKER_CA"), telemetryToken: os.Getenv("GOMETER_TELEMETRY_TOKEN"), telemetryCA: os.Getenv("GOMETER_TELEMETRY_CA")}, nil
+	return &Server{workerChecking: map[string]bool{}, allowHTTPWorkers: opts.AllowHTTPWorkers, store: saved, ctx: ctx, token: token, host: host, origin: origin, secureCookie: strings.HasPrefix(origin, "https://"), exports: map[string]configExport{}, workerToken: os.Getenv("GOMETER_WORKER_TOKEN"), workerCA: os.Getenv("GOMETER_WORKER_CA"), telemetryToken: os.Getenv("GOMETER_TELEMETRY_TOKEN"), telemetryCA: os.Getenv("GOMETER_TELEMETRY_CA")}, nil
 }
 
 func Serve(ctx context.Context, address, dir, publicOrigin string, opts Options, output io.Writer) error {
@@ -285,7 +286,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodHead {
 			w.Write(body)
 		}
-	case "/app.js", "/style.css", "/theme.js", "/theme.css", "/navigation.js", "/navigation.css", "/journey-model.js", "/journey-editor.js", "/journey.css", "/jmx.js", "/jmx.css", "/csv.js", "/csv.css", "/shortcuts.js", "/shortcuts.css", "/coverage.json",
+	case "/tests.js", "/tests.css", "/results.js", "/results.css", "/workers.js", "/workers.css", "/app.js", "/style.css", "/theme.js", "/theme.css", "/navigation.js", "/navigation.css", "/journey-model.js", "/journey-editor.js", "/journey.css", "/jmx.js", "/jmx.css", "/csv.js", "/csv.css", "/shortcuts.js", "/shortcuts.css", "/coverage.json",
 		"/IBMPlexSans-Regular.woff2", "/IBMPlexSans-Medium.woff2", "/IBMPlexSans-SemiBold.woff2", "/IBMPlexSans-Bold.woff2", "/IBMPlexMono-Regular.woff2":
 		body, err := assets.ReadFile("assets" + r.URL.Path)
 		if err != nil {
@@ -335,6 +336,12 @@ func readConfig(w http.ResponseWriter, r *http.Request) (config.Config, config.P
 
 func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
+	if s.definitionsAPI(w, r) {
+		return
+	}
+	if s.workersAPI(w, r) {
+		return
+	}
 	if s.csvAPI(w, r) {
 		return
 	}
@@ -391,7 +398,7 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 			summary := s.current.summary()
 			current = &summary
 		}
-		jsonResponse(w, 200, map[string]any{"current": current, "runs": s.store.runList(), "scenarios": s.store.scenarioList(), "migrations": s.store.migrationList(), "max_samples": maxSamples, "allow_http_workers": s.allowHTTPWorkers})
+		jsonResponse(w, 200, map[string]any{"current": current, "runs": s.store.runList(), "scenarios": s.store.scenarioList(), "migrations": s.store.migrationList(), "max_samples": maxSamples, "allow_http_workers": s.allowHTTPWorkers, "workers": s.store.workerList()})
 		return
 	}
 	if r.Method == "GET" && path == "/api/examples" {
@@ -426,7 +433,7 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 			}
 			jsonResponse(w, 200, map[string]any{"valid": true, "workload": unit, "load_seconds": p.LoadDuration.Seconds(), "phase_count": len(p.Phases), "scenario_count": len(p.ScenarioPlans), "config": c})
 		case "/api/scenarios":
-			s.saveScenario(w, "", c)
+			s.saveScenario(w, "", c, "")
 		case "/api/runs":
 			s.start(w, c, p)
 		}
@@ -434,6 +441,15 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 	}
 	if strings.HasPrefix(path, "/api/scenarios/") {
 		id := strings.TrimPrefix(path, "/api/scenarios/")
+		if strings.HasSuffix(id, "/copy") {
+			sourceID := strings.TrimSuffix(id, "/copy")
+			if !validID(sourceID) {
+				fail(w, 404, "Test not found.")
+				return
+			}
+			s.copyDefinition(w, r, sourceID)
+			return
+		}
 		if !validID(id) {
 			fail(w, 404, "Scenario not found.")
 			return
@@ -446,6 +462,8 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 				fail(w, 404, "Scenario not found.")
 				return
 			}
+			saved.Revision = definitionRevision(saved)
+			w.Header().Set("ETag", definitionETag(saved))
 			jsonResponse(w, 200, saved)
 			return
 		}
@@ -455,7 +473,7 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 				fail(w, 400, err.Error())
 				return
 			}
-			s.saveScenario(w, id, c)
+			s.saveScenario(w, id, c, r.Header.Get("If-Match"))
 			return
 		}
 		if r.Method == "DELETE" {
@@ -574,6 +592,10 @@ func (s *Server) importRun(w http.ResponseWriter, r *http.Request) {
 	p, err := run.Config.Validate()
 	if err != nil {
 		fail(w, 400, "Run configuration: "+err.Error())
+		return
+	}
+	if err := validateWorkerSnapshots(run.WorkerSnapshots, run.Config.Workers); err != nil {
+		fail(w, 400, err.Error())
 		return
 	}
 	result := run.Result
@@ -701,12 +723,16 @@ func (s *Server) importRun(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, 201, run.summary())
 }
 
-func (s *Server) saveScenario(w http.ResponseWriter, id string, c config.Config) {
+func (s *Server) saveScenario(w http.ResponseWriter, id string, c config.Config, expected string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if id != "" {
-		if _, ok := s.store.scenarios[id]; !ok {
+		old, ok := s.store.scenarios[id]
+		if !ok {
 			fail(w, 404, "Scenario not found.")
+			return
+		}
+		if !checkDefinitionRevision(w, old, expected) {
 			return
 		}
 	} else {
@@ -721,15 +747,20 @@ func (s *Server) saveScenario(w http.ResponseWriter, id string, c config.Config)
 			return
 		}
 	}
-	saved := SavedScenario{ID: id, Name: c.Name, UpdatedAt: time.Now().UTC(), Config: c}
+	now := time.Now().UTC()
+	saved := SavedScenario{ID: id, Name: c.Name, UpdatedAt: now, CreatedAt: &now, Revision: 1, Config: c}
 	if old, ok := s.store.scenarios[id]; ok {
 		saved.Migration = old.Migration
+		saved.CreatedAt = old.CreatedAt
+		saved.Source = old.Source
+		saved.Revision = definitionRevision(old) + 1
 	}
 	if err := s.store.write("scenarios", id, saved); err != nil {
 		fail(w, 500, err.Error())
 		return
 	}
 	s.store.scenarios[id] = saved
+	w.Header().Set("ETag", definitionETag(saved))
 	jsonResponse(w, 200, saved)
 }
 
@@ -779,7 +810,7 @@ func (s *Server) start(w http.ResponseWriter, c config.Config, p config.Plan) {
 	if p.IsJourney() {
 		workload = "journeys"
 	}
-	run := &Run{ID: id, Name: c.Name, CreatedAt: time.Now().UTC(), Status: "running", Config: c, Workload: workload, PlannedSeconds: p.LoadDuration.Seconds(), Samples: []Sample{{Phase: p.Phases[0].Name, TargetRate: p.Phases[0].Rate}}}
+	run := &Run{WorkerSnapshots: s.snapshotWorkers(c.Workers), ID: id, Name: c.Name, CreatedAt: time.Now().UTC(), Status: "running", Config: c, Workload: workload, PlannedSeconds: p.LoadDuration.Seconds(), Samples: []Sample{{Phase: p.Phases[0].Name, TargetRate: p.Phases[0].Rate}}}
 	run.Samples[0].Datasets = engine.DatasetSettings(p)
 	if p.HasUserSchedule() {
 		run.Samples[0].UserSchedule = &engine.UserSchedule{RampUpSeconds: p.UserRampUp.Seconds(), PlannedStartupSeconds: p.UserStartupDelay.Seconds(), Waiting: p.UserStartupDelay > 0, Users: engine.UserCounts{Planned: int64(p.VUs)}}

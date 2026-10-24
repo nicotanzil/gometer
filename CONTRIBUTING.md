@@ -8,8 +8,9 @@ record product scope and acceptance gates.
 
 ## Development setup
 
-Use Go 1.24 or newer and Node.js 18 or newer for development checks. There are no third-party Go dependencies or frontend package
-installation steps. The dashboard is embedded from `internal/dashboard/assets/`.
+Use Go 1.27.3 or newer and Node.js 18 or newer for development checks.
+Go modules supply the PostgreSQL and OIDC dependencies. No frontend package
+installation step is needed. The dashboard is embedded from `internal/dashboard/assets/`.
 Rebuild and restart the local dashboard after frontend changes, then reload the
 browser. A browser refresh alone does not replace assets in an existing binary.
 
@@ -45,6 +46,24 @@ dependency reordering, save/reload, literal user content, six viewport widths,
 and successful/failed journeys with independently counted HTTP requests. It also
 checks collapsed navigation, focus and tooltips, theme changes, mobile drawers,
 History comparison, Guide/Coverage, JMX review and the CSV dialog.
+
+The worker catalog has a separate optional browser verifier:
+`node internal/dashboard/test/workers-browser.cjs`. It uses two disposable local
+worker processes and a counted target, checks persistence and immutable run
+identity, and exercises the Workers view in three themes at four viewport widths.
+Use `GOMETER_BINARY` to select an isolated build, plus the same Playwright/Chrome
+settings described above. It never opens the user's saved workspace.
+
+The optional `node internal/dashboard/test/definitions-browser.cjs` checks
+real two-session revision conflicts, copy provenance, preserved drafts, Tests
+search/detail/edit navigation and responsive themes without executing workload.
+Use the same Playwright and Chrome settings as the other browser verifiers.
+
+`make test-workspace` runs PostgreSQL integration checks against a disposable
+Docker `postgres:18` fixture and removes it afterward. It never uses an application
+database URL. The default checks skip PostgreSQL integration cases without an
+explicit test URL. OIDC tests use a private TLS provider fixture; they do not
+verify a deployed Keycloak or LDAP server. See [team backend foundations](docs/team-workspace.md).
 
 ## Keep development state separate
 

@@ -35,13 +35,31 @@ GOMETER_UI_DATA=/data \
 Use an existing writable directory for `/data`, or a PVC in Kubernetes. NGINX
 terminates browser HTTPS and forwards HTTP to port 8790; the dashboard pod needs
 no server certificate. Worker tokens and worker CA files are needed only when
-using remote workers. Leave **Workers** blank to execute on the dashboard host.
+using remote workers. Choose **This machine** under Execution & diagnostics to execute on the dashboard host.
 See the [dashboard-only Kubernetes deployment](kubernetes.md#start-the-dashboard-without-workers)
 and [environment reference](cli.md#environment). Explicit flags override these
 variables, and environment changes require a process restart. The current prefix
 is `GOMETER_*`; `GMETER_*` names are not read.
 
 ## App overview
+
+![Persisted Tests library with definition revisions and independent copies](images/tests-library.png)
+
+The dashboard opens **Tests**, the persisted library of reusable definitions.
+Search names or target origins, inspect a sanitized preview, then choose **Edit
+test** or **Use a copy**. **New test** opens the builder; **Resume draft** returns
+to its existing fields without replacing them. The builder is a child of Tests,
+with no separate Build sidebar item. **Runs** is the existing history surface.
+Old in-app Build links still open the editor.
+
+This is the first team-workspace milestone. The library currently uses the
+existing personal workspace store. Teammate attribution/search, My tests, OIDC
+membership/roles, PostgreSQL persistence, queueing, full recovery drafts and the
+Queue/Team views remain pending. Starting a run still uses the existing single
+active-run behavior; there is no Add to queue action yet. Opening a different test
+through Tests preserves unfinished work by blocking the switch until it is saved
+or finished. This temporary guard is not the proposed recover-and-switch flow.
+
 
 ![Guided test builder and planned workload preview](images/test-builder.jpg)
 
@@ -64,9 +82,11 @@ or press **?** outside a text field. The reference shows keys for your platform.
 
 | Keys | Action |
 | --- | --- |
-| G, then B | Build |
+| G, then T | Tests library |
+| G, then B | Test editor |
 | G, then L | Live results |
 | G, then H | Run history |
+| G, then W | Worker catalog |
 | G, then G | User guide |
 | G, then C | Feature coverage |
 | ⌘/Ctrl + Enter | Validate the current builder configuration without workload traffic |
@@ -177,11 +197,23 @@ Journey tests label rates as journeys/second and put HTTP methods on steps.
 Starting a run validates again. Unknown fields and trailing JSON are rejected.
 Configuration imports have the same 1 MiB limit as the CLI.
 
-**Workers** accepts origins on separate lines. An empty field executes locally;
-worker pools support fixed arrival rates and use the configured rate/concurrency
-as fleet totals. The dashboard must inherit `GOMETER_WORKER_TOKEN` at startup.
-Remote origins require HTTPS. See [workers.md](workers.md) for worker setup,
-clock estimation, fixed quotas, leases, and incomplete measurements.
+**Execution & diagnostics** offers **This machine** or **Selected workers**.
+Register named generators in the sidebar’s **Workers** view, then select one or
+more entries in Build. Workers require **Fixed arrivals**, at most 32 selections,
+and at least one concurrency slot per worker; rate and concurrency are fleet
+totals. An empty worker selection blocks running instead of choosing local
+execution. Unregistered origins from older configurations remain visible and
+selected, with an explicit Register action.
+
+The catalog is saved in the server workspace and shared between connected
+browsers. Manual **Check connection** reads authenticated status without target
+traffic or reservations. Its timestamp is an observation; the run’s actual
+preflight remains authoritative. Catalog edits do not rewrite loaded tests,
+active runs, or history. Run bundles retain the captured names and origins.
+The dashboard must inherit `GOMETER_WORKER_TOKEN` at startup. Remote control uses
+verified HTTPS by default; HTTP requires separate startup permission. See the
+[worker catalog and setup guide](workers.md#reusable-worker-catalog) for status
+meanings, trust settings, quotas, leases, and incomplete measurements.
 
 **Target-server telemetry** configures a Prometheus text endpoint, cadence,
 timeout, selected scalar series, and optional environment bearer authentication.
@@ -193,6 +225,23 @@ values do not enter browser payloads or exports. See [telemetry.md](telemetry.md
 
 **Save scenario** creates a library entry. After loading it, **Update scenario**
 changes that entry. **Save editor as a new scenario** makes a separate copy.
+Saved definitions now carry a revision. Updates require the revision opened by
+the editor; a concurrent update is rejected and your current draft stays in place.
+Use **Save editor as a new scenario** to retain conflicting edits independently.
+The library’s **Use a copy** action persists a new definition with its own ID,
+revision 1, and source ID/revision provenance, then opens it in the editor. It
+sends no workload. Finish or save an unfinished current draft before opening a
+copy. Revisions and provenance survive restart. Existing files without revision
+metadata are read as revision 1 without rewriting the files on load.
+
+For API clients, GET `/api/scenarios/{id}` returns an `ETag` such as `"2"`.
+Send that exact value in `If-Match` when updating or posting to
+`/api/scenarios/{id}/copy` (copy takes an empty body). Missing preconditions
+return 428 and stale ones return 409. Successful writes return the new ETag.
+These are definition-edit controls in the existing personal workspace; individual
+team identities, permissions, durable queueing and recovery drafts are not yet
+implemented.
+
 **Import JSON** loads a validated configuration without saving or executing it.
 **JSON** exports the current editor, preserving `null` for disabled checks.
 Exports validate the editor first and use a native browser download. The server
@@ -225,12 +274,30 @@ on the dashboard also cancels and saves before exit.
 
 Charts refresh about once per second. Short runs still get initial/final samples.
 
+Hover or tap a chart to inspect its recorded values. Keyboard users can focus
+the chart, move with Left/Right, jump with Home/End, and clear the readout with
+Escape. Select a series name below a chart to hide or restore it. Readouts
+include units; missing observations say **No sample** and remain gaps.
+
+**Workload outcomes** separates successful, failed, in-flight, capacity-missed,
+and scheduler-missed work. Its unit is requests or journeys, matching the test.
+Incomplete distributed results describe reported workload only; unreported work
+remains unknown. **Request latency** compares p50, p95 and p99 with minimum,
+mean and maximum values. These are cumulative histogram percentiles, not a
+response-time distribution reconstructed from raw samples.
+
+Finished runs show acceptance checks with the observed value, required limit
+and recorded pass/fail result. Failed checks expand automatically and appear
+first; expand a passing summary to inspect its checks. A latency check with
+no completed samples says **No samples**. The configured verdict remains
+independent of chart visibility.
+
 - Traffic lines divide changes in started counters by wall time between samples.
   Journeys show both HTTP attempts/s and journeys/s; their target is journeys/s.
 - Interval error percentages use failed/completed differences; missed-demand
   percentages use dropped/scheduled workload differences. No denominator means
   no point.
-- Latency p50/p95 lines are cumulative histogram estimates, not interval
+- Latency p50/p95/p99 lines are cumulative histogram estimates, not interval
   quantiles. Cumulative quantiles cannot be subtracted to get interval quantiles.
 - Cards use cumulative metrics and load-window throughput, matching the CLI.
   Interval charts use wall time and can show HTTP steps during journey drain.
@@ -292,7 +359,7 @@ limit, and assign a new ID. They send no traffic. Imported runs are marked
 Importing the same file twice makes two history entries. CLI result JSON alone
 is not a run bundle.
 
-The workspace supports 200 saved scenarios and 1000 runs. Export entries before
+The workspace supports 200 saved scenarios, 200 catalog workers, and 1000 runs. Export entries before
 deleting them if needed. If final persistence fails, the current result remains
 available for export and new runs are blocked until the process is restarted.
 

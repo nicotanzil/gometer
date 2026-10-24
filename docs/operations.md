@@ -83,6 +83,13 @@ support these modes. Existing directory permissions are not tightened. On other
 platforms, configure equivalent account and filesystem access controls.
 The data is not encrypted at rest.
 
+The worker catalog is stored in the same workspace under `workers/` and is
+included in a complete workspace backup. Browsers share the catalog through one
+dashboard process. Dated connection observations are not readiness guarantees;
+checks are manual and never send workload. Catalog changes do not rewrite saved
+scenarios, active configurations, or run identities. See the
+[worker catalog guide](workers.md#reusable-worker-catalog).
+
 ## Private ingress access
 
 The dashboard listens on loopback by default. A cluster deployment can opt into
@@ -108,6 +115,7 @@ for its data directory. Do not share that directory between pods.
 | Migration drafts | 50 non-runnable drafts, stored separately from scenarios |
 | Dashboard run record or imported bundle | 16 MiB |
 | Saved scenarios | 200 |
+| Catalog workers | 200, saved under workers/ in the workspace; at most 32 selected per run |
 | Saved runs | 1000 |
 | Dashboard workload timeline | Latest 900 points, roughly 15 minutes at its normal cadence |
 | Telemetry timeline | Latest 900 scrape observations, independently retained |

@@ -89,7 +89,7 @@ func TestJMXGuidedImportPersistenceAndNoTraffic(t *testing.T) {
 	// the edited configuration is still equivalent to the JMX.
 	saved.Config.Name = "Edited after import"
 	b, _ := json.Marshal(saved.Config)
-	w = request(s, "PUT", "/api/scenarios/"+saved.ID, string(b))
+	w = revisionRequest(s, "PUT", "/api/scenarios/"+saved.ID, string(b), `"1"`)
 	if w.Code != 200 {
 		t.Fatal(w.Body.String())
 	}

@@ -32,6 +32,9 @@ Usage:
   gometer ui -listen 0.0.0.0:8790 -public-origin https://gometer.example.com
   gometer worker -listen 127.0.0.1:8801 -name worker-1
   gometer run -config examples/smoke.json -workers http://127.0.0.1:8801,http://127.0.0.1:8802
+  gometer workspace migrate
+  gometer workspace check
+  gometer workspace oidc-check
   gometer version
 
 Startup flags override GOMETER_* environment settings.
@@ -59,6 +62,8 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return run(ctx, args[1:], stdout, stderr)
 	case "ui":
 		return ui(ctx, args[1:], stdout, stderr)
+	case "workspace":
+		return workspaceCommand(ctx, args[1:], stdout, stderr)
 	case "worker":
 		return worker(ctx, args[1:], stdout, stderr)
 	default:

@@ -24,6 +24,7 @@ import (
 const maxSamples = 900
 const maxRuns = 1000
 const maxScenarios = 200
+const maxSavedWorkers = 200
 const maxRecordBytes = 16 << 20
 
 // Samples contain cumulative aggregates, not individual response samples.
@@ -45,33 +46,38 @@ type Sample struct {
 }
 
 type Run struct {
-	ID             string         `json:"id"`
-	Name           string         `json:"name"`
-	CreatedAt      time.Time      `json:"created_at"`
-	Status         string         `json:"status"`
-	Config         config.Config  `json:"config"`
-	Workload       string         `json:"workload"`
-	PlannedSeconds float64        `json:"planned_seconds"`
-	Samples        []Sample       `json:"samples"`
-	Result         *engine.Result `json:"result,omitempty"`
-	Error          string         `json:"error,omitempty"`
-	SaveError      string         `json:"save_error,omitempty"`
-	Imported       bool           `json:"imported,omitempty"`
+	WorkerSnapshots []WorkerSnapshot `json:"worker_snapshots,omitempty"`
+	ID              string           `json:"id"`
+	Name            string           `json:"name"`
+	CreatedAt       time.Time        `json:"created_at"`
+	Status          string           `json:"status"`
+	Config          config.Config    `json:"config"`
+	Workload        string           `json:"workload"`
+	PlannedSeconds  float64          `json:"planned_seconds"`
+	Samples         []Sample         `json:"samples"`
+	Result          *engine.Result   `json:"result,omitempty"`
+	Error           string           `json:"error,omitempty"`
+	SaveError       string           `json:"save_error,omitempty"`
+	Imported        bool             `json:"imported,omitempty"`
 }
 
 type RunSummary struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"created_at"`
-	Status    string    `json:"status"`
-	Workload  string    `json:"workload"`
+	WorkerSnapshots []WorkerSnapshot `json:"worker_snapshots,omitempty"`
+	ID              string           `json:"id"`
+	Name            string           `json:"name"`
+	CreatedAt       time.Time        `json:"created_at"`
+	Status          string           `json:"status"`
+	Workload        string           `json:"workload"`
 }
 
 func (r Run) summary() RunSummary {
-	return RunSummary{r.ID, r.Name, r.CreatedAt, r.Status, r.Workload}
+	return RunSummary{ID: r.ID, Name: r.Name, CreatedAt: r.CreatedAt, Status: r.Status, Workload: r.Workload, WorkerSnapshots: r.WorkerSnapshots}
 }
 
 type SavedScenario struct {
+	Revision  uint64           `json:"revision"`
+	CreatedAt *time.Time       `json:"created_at,omitempty"`
+	Source    *TestSource      `json:"source,omitempty"`
 	ID        string           `json:"id"`
 	Name      string           `json:"name"`
 	UpdatedAt time.Time        `json:"updated_at"`
@@ -80,15 +86,18 @@ type SavedScenario struct {
 }
 
 type ScenarioSummary struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Mode        string    `json:"mode"`
-	Workload    string    `json:"workload"`
-	ImportedJMX bool      `json:"imported_jmx,omitempty"`
+	Revision    uint64      `json:"revision"`
+	Source      *TestSource `json:"source,omitempty"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	UpdatedAt   time.Time   `json:"updated_at"`
+	Mode        string      `json:"mode"`
+	Workload    string      `json:"workload"`
+	ImportedJMX bool        `json:"imported_jmx,omitempty"`
 }
 
 type store struct {
+	workers    map[string]SavedWorker
 	dir        string
 	runs       map[string]RunSummary
 	scenarios  map[string]SavedScenario
@@ -112,8 +121,8 @@ func validID(id string) bool {
 }
 
 func openStore(dir string) (*store, error) {
-	s := &store{dir: dir, runs: map[string]RunSummary{}, scenarios: map[string]SavedScenario{}, migrations: map[string]MigrationDraft{}}
-	for _, kind := range []string{"runs", "scenarios", "migrations"} {
+	s := &store{dir: dir, runs: map[string]RunSummary{}, scenarios: map[string]SavedScenario{}, migrations: map[string]MigrationDraft{}, workers: map[string]SavedWorker{}}
+	for _, kind := range []string{"runs", "scenarios", "migrations", "workers"} {
 		path := filepath.Join(dir, kind)
 		if err := os.MkdirAll(path, 0700); err != nil {
 			return nil, err
@@ -146,6 +155,25 @@ func openStore(dir string) (*store, error) {
 					}
 				}
 				s.runs[id] = run.summary()
+			} else if kind == "workers" {
+				var worker SavedWorker
+				if err := readRecord(filepath.Join(path, entry.Name()), &worker); err != nil {
+					return nil, err
+				}
+				origin, err := config.NormalizeWorkerOrigin(worker.Origin)
+				if worker.ID != id || err != nil || !validWorkerName(worker.Name) {
+					return nil, fmt.Errorf("invalid saved worker: %s", id)
+				}
+				worker.Origin = origin
+				for _, previous := range s.workers {
+					if previous.Origin == origin {
+						return nil, fmt.Errorf("duplicate saved worker origin")
+					}
+				}
+				if len(s.workers) >= maxSavedWorkers {
+					return nil, fmt.Errorf("worker catalog exceeds 200 entries")
+				}
+				s.workers[id] = worker
 			} else if kind == "migrations" {
 				var draft MigrationDraft
 				if err := readRecord(filepath.Join(path, entry.Name()), &draft); err != nil {
@@ -225,7 +253,7 @@ func (s *store) scenarioList() []ScenarioSummary {
 		if len(scenario.Config.Scenarios) > 0 {
 			workload = "journeys"
 		}
-		list = append(list, ScenarioSummary{scenario.ID, scenario.Name, scenario.UpdatedAt, scenario.Config.Mode, workload, scenario.Migration != nil})
+		list = append(list, ScenarioSummary{ID: scenario.ID, Name: scenario.Name, UpdatedAt: scenario.UpdatedAt, Mode: scenario.Config.Mode, Workload: workload, ImportedJMX: scenario.Migration != nil, Revision: definitionRevision(scenario), Source: scenario.Source})
 	}
 	sort.Slice(list, func(i, j int) bool { return list[i].UpdatedAt.After(list[j].UpdatedAt) })
 	return list

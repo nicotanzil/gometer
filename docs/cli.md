@@ -18,6 +18,10 @@ positional arguments.
 | `gometer run [flags]` | Validate, execute a workload, and write configured reports |
 | `gometer ui [flags]` | Start the dashboard; loopback by default |
 | `gometer worker [flags]` | Start an authenticated rate-mode worker |
+| `gometer workspace migrate` | Apply the PostgreSQL workspace schema explicitly |
+| `gometer workspace check` | Check PostgreSQL schema compatibility without migrating |
+| `gometer workspace init [flags]` | Bootstrap one workspace and its first administrator |
+| `gometer workspace oidc-check [flags]` | Validate Keycloak discovery and TLS without signing in |
 
 Each command accepts `-help`; startup options identify their environment variable.
 Build with `make build` or the Go commands in
@@ -127,6 +131,37 @@ See the [environment table](#environment) for the variable mapped to each flag.
 Each dashboard process needs its own data directory. Workers accept one reserved
 or active job at a time. See [dashboard](dashboard.md) and [workers](workers.md).
 
+## Workspace administration
+
+These commands provide the team backend foundation. They do not enable browser
+SSO, change dashboard storage, import personal JSON files, or execute workloads.
+See [team workspace setup](team-workspace.md) for the current implementation boundary.
+
+`migrate`, `check` and `init` require `GOMETER_DATABASE_URL`. The database URL is
+environment-only to keep credentials out of command arguments. Remote PostgreSQL
+connections require verified TLS for every configured host. Run `migrate` before
+`check` or `init`; migration history and checksums are validated.
+
+| Command | Flag | Environment / default | Purpose |
+| --- | --- | --- | --- |
+| `init` | `-id` | `GOMETER_WORKSPACE_ID` / generated | Workspace ID: 32 lowercase hexadecimal characters |
+| `init` | `-name` | `GOMETER_WORKSPACE_NAME` / `Team workspace` | Workspace display name |
+| `init`, `oidc-check` | `-issuer` | `GOMETER_OIDC_ISSUER` / required | Exact HTTPS Keycloak realm issuer |
+| `init` | `-subject` | required flag | Initial administrator's exact OIDC subject, not LDAP username |
+| `init` | `-display-name` | required flag | Initial administrator's display name |
+| `oidc-check` | `-client-id` | `GOMETER_OIDC_CLIENT_ID` / required | Confidential OIDC client ID |
+| `oidc-check` | `-redirect-uri` | `GOMETER_OIDC_REDIRECT_URI` / required | Exact registered HTTPS callback URI; browser adapter is pending |
+| `oidc-check` | `-oidc-ca` | `GOMETER_OIDC_CA` / system trust | Additional PEM CA certificate file |
+
+`init` is an explicit database-owner operation. It records the supplied identity;
+it does not authenticate it. Reusing an initialized workspace ID is rejected.
+Without an ID, each invocation creates another workspace.
+
+`oidc-check` requires the environment-only `GOMETER_OIDC_CLIENT_SECRET`, but no
+database. Successful discovery does not verify client credentials, callback
+registration, LDAP federation or an actual sign-in. LDAP configuration remains in
+Keycloak. Non-secret flags override environment settings, including empty values.
+
 ## Environment
 
 These startup variables describe the current source. The released `0.6.0` image
@@ -150,6 +185,14 @@ prefix is `GOMETER_*`; the older `GMETER_*` names are not aliases.
 | `GOMETER_WORKER_CA` | CLI coordinator, dashboard | Additional PEM CA file for worker HTTPS |
 | `GOMETER_TELEMETRY_TOKEN` | CLI, dashboard | Exporter bearer token when `bearer_auth` is enabled |
 | `GOMETER_TELEMETRY_CA` | CLI, dashboard | Additional PEM CA file for exporter HTTPS |
+| `GOMETER_DATABASE_URL` | Workspace migrate/check/init | PostgreSQL connection URL; environment-only, never printed |
+| `GOMETER_WORKSPACE_ID` | Workspace init | Existing empty workspace ID, or generate one when omitted |
+| `GOMETER_WORKSPACE_NAME` | Workspace init | Workspace name; default `Team workspace` |
+| `GOMETER_OIDC_ISSUER` | Workspace init/oidc-check | Exact HTTPS Keycloak realm issuer |
+| `GOMETER_OIDC_CLIENT_ID` | Workspace oidc-check | Confidential client ID |
+| `GOMETER_OIDC_CLIENT_SECRET` | Workspace oidc-check | Server-side credential; environment-only |
+| `GOMETER_OIDC_REDIRECT_URI` | Workspace oidc-check | Exact future HTTPS callback URI |
+| `GOMETER_OIDC_CA` | Workspace oidc-check | Optional additional PEM CA for Keycloak TLS |
 | `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` | Workload transport | Go's standard proxy environment behavior |
 
 Start the dashboard without configuration flags:

@@ -1,7 +1,7 @@
 'use strict';
 
 (function(root) {
-  const navigation={b:'build',l:'live',h:'history',g:'guide',c:'coverage'};
+  const navigation={t:'tests',b:'build',l:'live',h:'history',w:'workers',g:'guide',c:'coverage'};
   function editing(event) {
     const elements=event.composedPath?.()||[event.target];
     return elements.some(e=>e?.isContentEditable||e?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="combobox"],[role="searchbox"]'));
@@ -39,9 +39,9 @@
     dialog.innerHTML='<form method="dialog" class="shortcuts-heading"><div><div class="eyebrow">WORK FASTER</div><h2 id="shortcuts-title">Keyboard shortcuts</h2></div><button class="text-button" aria-label="Close keyboard shortcuts" value="close">✕</button></form><p id="shortcuts-intro">Keep your hands on the keyboard. Press G, release it, then a destination key within two seconds.</p><div class="shortcuts-groups"><section><h3>Go to a view</h3><dl data-navigation></dl></section><section><h3>Build a test</h3><dl data-builder></dl><p class="helper">Builder actions use your current settings and the same checks as their buttons. Start run sends workload traffic.</p></section></div><div class="shortcuts-general"><span>Show this reference <kbd>?</kbd></span><span>Close dialog / cancel G sequence <kbd>Esc</kbd></span></div><label class="shortcuts-preference"><input type="checkbox" id="shortcut-characters"> Enable G sequences and ?</label><p class="helper">Character keys stay inactive in text fields and dialogs. Turn them off here if they interfere with your input tools. Modifier shortcuts stay available.</p><p class="helper">Canvas Undo works outside text fields. Your normal text undo, copy, paste, and browser shortcuts remain available.</p>';
     document.body.append(dialog);
     function row(label,keys){const r=el('div'),dt=el('dt',label),dd=el('dd');keys.forEach((k,i)=>{if(i)dd.append(el('span','then','shortcut-then'));dd.append(el('kbd',k));});r.append(dt,dd);return r;}
-    for(const [key,view] of Object.entries(navigation))dialog.querySelector('[data-navigation]').append(row({build:'Build',live:'Live results',history:'Run history',guide:'User guide',coverage:'Feature coverage'}[view],['G',key.toUpperCase()]));
+    for(const [key,view] of Object.entries(navigation))dialog.querySelector('[data-navigation]').append(row({tests:'Tests library',build:'Test editor',live:'Live results',history:'Run history',workers:'Worker catalog',guide:'User guide',coverage:'Feature coverage'}[view],['G',key.toUpperCase()]));
     for(const [name,keys] of [['Validate',[`${mod} Enter`]],['Save scenario',[`${mod} S`]],['Start run',[`${mod} Shift Enter`]],['Undo canvas edit',[`${mod} Z`]]])dialog.querySelector('[data-builder]').append(row(name,keys));
-    const hint=el('div',undefined,'shortcut-sequence');hint.hidden=true;hint.setAttribute('role','status');hint.setAttribute('aria-live','polite');hint.textContent='Go to: B Build · L Live · H History · G Guide · C Coverage · Esc cancel';document.body.append(hint);
+    const hint=el('div',undefined,'shortcut-sequence');hint.hidden=true;hint.setAttribute('role','status');hint.setAttribute('aria-live','polite');hint.textContent='Go to: T Tests · B Editor · L Live · H History · W Workers · G Guide · C Coverage · Esc cancel';document.body.append(hint);
     function open(){if(document.querySelector('dialog[open]'))return;keys.reset();previousFocus=document.activeElement;dialog.showModal();}
     const keys=controller({allowed:action=>action==='help'||allowed(action),modal:()=>!!document.querySelector('dialog[open],#workspace-sidebar[aria-modal="true"]'),characters:()=>enabled,hint:visible=>{hint.hidden=!visible;},perform:action=>{try{Promise.resolve(action==='help'?open():perform(action)).catch(onError);}catch(e){onError(e);}}});
     const picker=dialog.querySelector('#shortcut-characters');picker.checked=enabled;

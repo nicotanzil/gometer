@@ -368,7 +368,7 @@ func TestScenarioRoundTripPreservesDisabledChecks(t *testing.T) {
 		t.Fatal("export altered disabled thresholds")
 	}
 	updated := strings.Replace(body, `"Saved"`, `"Updated"`, 1)
-	if w := request(s, "PUT", "/api/scenarios/"+saved.ID, updated); w.Code != 200 {
+	if w := revisionRequest(s, "PUT", "/api/scenarios/"+saved.ID, updated, `"1"`); w.Code != 200 {
 		t.Fatal("update failed")
 	}
 	reopened, err := openStore(s.store.dir)

@@ -19,7 +19,7 @@ service security model or a security certification.
 | Local workspace and reports | Atomic writes; new workspace directories 0700 and files 0600 on permission-based filesystems | Protect the account, existing directories, downloaded files, backups, and CI artifact access |
 
 Local API tokens prevent cross-site request use; they do not isolate the dashboard
-from processes running under the same local account. The app has no login,
+from processes running under the same local account. The dashboard has no user login,
 RBAC, SSO, tenant isolation, audit log, or encryption at rest. The optional
 `-public-origin` setting preserves exact Host/Origin checks behind a TLS-terminating
 ingress; it does not authenticate users. Remote access must be restricted by a VPN
@@ -46,6 +46,22 @@ See [worker setup](docs/workers.md) and [HTTPS options](docs/https.md) for trust
 configuration. Workload `insecure` does not disable worker or telemetry verification.
 Workload custom CA, client-certificate, and selectable TLS-version options remain
 planned; do not infer support from the control-plane CA flags.
+
+## Team backend implementation boundary
+
+The optional PostgreSQL repository and Keycloak-compatible OIDC verifier are
+backend foundations. They are not connected to dashboard routes or browser
+sessions. The `workspace` administration commands do not turn the current
+personal dashboard into an authenticated team service. Do not expose existing
+raw-configuration or download endpoints to teammates on the assumption that
+repository role checks protect those endpoints.
+
+The foundation verifies remote database TLS and OIDC transport, uses exact
+issuer/subject identities and current persisted memberships, and commits
+repository mutations with metadata-only audit events. Managed secret references,
+allowed destinations, browser session/CSRF protection, and the shared executor
+remain pending. LDAP federation stays in Keycloak. See
+[team backend foundations](docs/team-workspace.md) for setup and verification limits.
 
 ## Credentials and exported data
 

@@ -1,4 +1,4 @@
-.PHONY: build test test-ui test-browser check demo clean
+.PHONY: build test test-ui test-browser test-workspace check demo clean
 NODE ?= node
 
 build:
@@ -11,7 +11,10 @@ test: test-ui
 test-ui:
 	$(NODE) --check internal/dashboard/assets/theme.js
 	$(NODE) --check internal/dashboard/assets/navigation.js
+	$(NODE) --check internal/dashboard/assets/workers.js
+	$(NODE) --check internal/dashboard/assets/tests.js
 	$(NODE) --check internal/dashboard/assets/app.js
+	$(NODE) --check internal/dashboard/assets/results.js
 	$(NODE) --check internal/dashboard/assets/jmx.js
 	$(NODE) --check internal/dashboard/assets/csv.js
 	$(NODE) --check internal/dashboard/assets/shortcuts.js
@@ -20,6 +23,9 @@ test-ui:
 
 test-browser: build
 	$(NODE) internal/dashboard/test/journey-browser.cjs
+
+test-workspace:
+	$(NODE) scripts/test-workspace-postgres.cjs
 
 check: test-ui
 	go vet ./...
