@@ -76,14 +76,34 @@ Verification completed with the retained Go 1.27.3 toolchain and dependencies:
 `make check build` passed JavaScript checks, vet, all Go race tests and both
 binary builds; `make test-workspace` passed against its isolated PostgreSQL 18
 fixture. No application database, live identity provider or shared dashboard
-process was used. The completed foundation is being committed locally before
-browser sign-in and session development.
+process was used. The completed foundation is committed as `282f9a2`.
+
+## Browser sign-in slice — 24 October 2026
+
+Implemented locally, after commit `282f9a2`: `workspace serve` with a separate
+sign-in screen and session-only HTTP boundary; browser-bound AES-GCM login
+records consumed atomically from PostgreSQL; hashed durable session tokens;
+secure host-only cookies; current membership checks; CSRF-protected local logout
+and transactional audit. Disabling a member deletes their sessions. Migration
+002 adds session tables without rewriting definitions or migration 001.
+
+Verified: the PostgreSQL/Docker fixture suite, including real environment-based
+CLI startup/shutdown, two-instance callback/session restoration, race/replay and
+wrong-browser/state checks, role changes, unknown/disabled-account denial,
+credential-safe output, audit rollback and upgrade preservation. Chromium
+completed TLS-provider sign-in, secure-cookie checks, reload and sign-out; light
+and dark layouts passed at four widths. The CLI test environment now preserves
+only the guarded fixture URL, and the runner rejects silently skipped required
+PostgreSQL cases. Project checks/builds and the local vulnerability scan passed.
+
+The new sign-in slice is uncommitted. No real company Keycloak, LDAP or Kubernetes
+acceptance was run. Personal dashboard APIs are not exposed by this service.
+Local logout does not end Keycloak SSO; Keycloak/LDAP-only revocation is observed
+at the next sign-in or local expiry. No refresh tokens are stored.
 
 ## Next slice
 
-Connect browser sign-in to the verified OIDC component with browser-bound login
-transactions, durable server-side sessions, secure cookies, CSRF checks and
-explicit logout. Recheck persisted membership on authenticated operations.
-Keep personal routes outside team mode until managed secret references and
-read/export/destination policies protect the shared API boundary. Follow with
-the team Tests adapter, then durable submissions and the separate executor.
+Define and enforce managed secret references and read/export/destination policy
+before connecting team Tests APIs. Keep actor attribution server-assigned and
+recheck roles at every mutation. Follow with team Tests navigation and conflict
+recovery, then durable submissions and the separate serial executor.

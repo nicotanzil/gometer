@@ -163,6 +163,11 @@ func (d *Database) SetMember(ctx context.Context, workspaceID, adminID string, i
 	if _, err = tx.Exec(ctx, `INSERT INTO gometer.memberships(workspace_id,actor_id,role,enabled) VALUES($1,$2,$3,$4) ON CONFLICT(workspace_id,actor_id) DO UPDATE SET role=EXCLUDED.role,enabled=EXCLUDED.enabled,updated_at=clock_timestamp()`, workspaceID, id, role, enabled); err != nil {
 		return "", ErrUnavailable
 	}
+	if !enabled {
+		if _, err = tx.Exec(ctx, `DELETE FROM gometer.sessions WHERE workspace_id=$1 AND actor_id=$2`, workspaceID, id); err != nil {
+			return "", ErrUnavailable
+		}
+	}
 	if audit(ctx, tx, workspaceID, adminID, "membership.change", id, 0) != nil {
 		return "", ErrUnavailable
 	}

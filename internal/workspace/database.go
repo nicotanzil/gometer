@@ -22,7 +22,10 @@ import (
 //go:embed migrations/*.sql
 var migrations embed.FS
 
-const schemaVersion = 1
+const schemaVersion = 2
+
+var migrationFiles = []string{"001_workspace.sql", "002_sessions.sql"}
+
 const migrationLock int64 = 0x676f6d65746572
 
 var (
@@ -131,17 +134,24 @@ func (d *Database) Migrate(ctx context.Context) error {
 			return ErrSchema
 		}
 	}
-	data, _ := migrations.ReadFile("migrations/001_workspace.sql")
-	hash := fmt.Sprintf("%x", sha256.Sum256(data))
-	if old, exists := known[1]; exists {
-		if old != hash {
-			return ErrSchema
+	for version := 1; version <= schemaVersion; version++ {
+		data, hash := migrationData(version)
+		if old, exists := known[version]; exists {
+			if old != hash {
+				return ErrSchema
+			}
+			continue
 		}
-	} else {
+		// A later recorded migration cannot precede an absent earlier migration.
+		for later := version + 1; later <= schemaVersion; later++ {
+			if _, exists := known[later]; exists {
+				return ErrSchema
+			}
+		}
 		if _, err = tx.Exec(ctx, string(data)); err != nil {
-			return fmt.Errorf("workspace schema migration 1 failed; no schema changes committed")
+			return fmt.Errorf("workspace schema migration %d failed; no schema changes committed", version)
 		}
-		if _, err = tx.Exec(ctx, `INSERT INTO gometer.schema_migrations(version,checksum) VALUES(1,$1)`, hash); err != nil {
+		if _, err = tx.Exec(ctx, `INSERT INTO gometer.schema_migrations(version,checksum) VALUES($1,$2)`, version, hash); err != nil {
 			return ErrUnavailable
 		}
 	}
@@ -150,9 +160,15 @@ func (d *Database) Migrate(ctx context.Context) error {
 	}
 	return nil
 }
+func migrationData(version int) ([]byte, string) {
+	data, err := migrations.ReadFile("migrations/" + migrationFiles[version-1])
+	if err != nil {
+		panic("embedded workspace migration missing")
+	}
+	return data, fmt.Sprintf("%x", sha256.Sum256(data))
+}
 func (d *Database) Check(ctx context.Context) error {
-	var maximum int
-	err := d.pool.QueryRow(ctx, `SELECT coalesce(max(version),0) FROM gometer.schema_migrations`).Scan(&maximum)
+	rows, err := d.pool.Query(ctx, `SELECT version,checksum FROM gometer.schema_migrations ORDER BY version`)
 	if err != nil {
 		var databaseError *pgconn.PgError
 		if errors.As(err, &databaseError) && (databaseError.Code == "42P01" || databaseError.Code == "3F000") {
@@ -160,15 +176,27 @@ func (d *Database) Check(ctx context.Context) error {
 		}
 		return ErrUnavailable
 	}
-	if maximum != schemaVersion {
-		return ErrSchema
+	defer rows.Close()
+	version := 0
+	for rows.Next() {
+		var current int
+		var checksum string
+		if rows.Scan(&current, &checksum) != nil {
+			return ErrUnavailable
+		}
+		version++
+		if current != version || current > schemaVersion {
+			return ErrSchema
+		}
+		_, expected := migrationData(current)
+		if checksum != expected {
+			return ErrSchema
+		}
 	}
-	var checksum string
-	if d.pool.QueryRow(ctx, `SELECT checksum FROM gometer.schema_migrations WHERE version=$1`, schemaVersion).Scan(&checksum) != nil {
+	if rows.Err() != nil {
 		return ErrUnavailable
 	}
-	data, _ := migrations.ReadFile("migrations/001_workspace.sql")
-	if checksum != fmt.Sprintf("%x", sha256.Sum256(data)) {
+	if version != schemaVersion {
 		return ErrSchema
 	}
 	return nil

@@ -22,10 +22,11 @@ import (
 )
 
 // CLI tests use an isolated application environment, not a developer's deployment.
+// Keep only the explicitly guarded integration-fixture URL for PostgreSQL cases.
 func TestMain(m *testing.M) {
 	for _, entry := range os.Environ() {
 		name, _, _ := strings.Cut(entry, "=")
-		if strings.HasPrefix(name, "GOMETER_") {
+		if strings.HasPrefix(name, "GOMETER_") && name != "GOMETER_TEST_DATABASE_URL" {
 			if err := os.Unsetenv(name); err != nil {
 				panic(err)
 			}

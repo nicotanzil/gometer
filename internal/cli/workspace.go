@@ -14,13 +14,16 @@ import (
 
 func workspaceCommand(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
-		fmt.Fprintln(stdout, "usage: gometer workspace migrate|check|init|oidc-check [options]")
+		fmt.Fprintln(stdout, "usage: gometer workspace migrate|check|init|oidc-check|serve [options]")
 		return 0
 	}
 	action := args[0]
-	if action != "migrate" && action != "check" && action != "init" && action != "oidc-check" {
-		fmt.Fprintln(stderr, "usage: gometer workspace migrate|check|init|oidc-check [options]")
+	if action != "migrate" && action != "check" && action != "init" && action != "oidc-check" && action != "serve" {
+		fmt.Fprintln(stderr, "usage: gometer workspace migrate|check|init|oidc-check|serve [options]")
 		return 2
+	}
+	if action == "serve" {
+		return workspaceServe(ctx, args[1:], stdout, stderr)
 	}
 	fs := flag.NewFlagSet("workspace "+action, flag.ContinueOnError)
 	fs.SetOutput(stderr)

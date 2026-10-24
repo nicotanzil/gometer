@@ -52,8 +52,8 @@ type Provider struct {
 }
 
 // Login is a single-use browser flow, not an authenticated application session.
-// The HTTP adapter must also bind its state to the initiating browser. Pending
-// flows are intentionally not resumable across process restarts.
+// The HTTP adapter must bind its state to the initiating browser and atomically
+// consume a durable record before restoring it with OpenLogin.
 type Login struct {
 	mu                                       sync.Mutex
 	state, nonce, verifier, authorizationURL string
@@ -230,4 +230,13 @@ func (p *Provider) Finish(ctx context.Context, login *Login, state, code string)
 		name = verified.Subject
 	}
 	return Principal{Issuer: p.issuer, Subject: verified.Subject, DisplayName: name, ExpiresAt: verified.Expiry}, nil
+}
+
+// RedirectURI is the exact callback registered for this provider.
+func (p *Provider) RedirectURI() string { return p.config.RedirectURL }
+
+// AuthorizationOrigin allows the sign-in form to redirect only to this provider.
+func (p *Provider) AuthorizationOrigin() string {
+	u, _ := url.Parse(p.config.Endpoint.AuthURL)
+	return (&url.URL{Scheme: u.Scheme, Host: u.Host}).String()
 }

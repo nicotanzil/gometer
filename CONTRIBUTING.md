@@ -63,7 +63,9 @@ Use the same Playwright and Chrome settings as the other browser verifiers.
 Docker `postgres:18` fixture and removes it afterward. It never uses an application
 database URL. The default checks skip PostgreSQL integration cases without an
 explicit test URL. OIDC tests use a private TLS provider fixture; they do not
-verify a deployed Keycloak or LDAP server. See [team backend foundations](docs/team-workspace.md).
+verify a deployed Keycloak or LDAP server. Set `GOMETER_TEAM_BROWSER=1` alongside
+`PLAYWRIGHT_MODULE` and `CHROME_PATH` to include the optional TLS sign-in/sign-out
+browser flow. See [team backend foundations](docs/team-workspace.md).
 
 ## Keep development state separate
 

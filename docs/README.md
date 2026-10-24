@@ -28,7 +28,7 @@ contextual explanations, and troubleshooting.
 | [JMeter JMX import](jmx-import.md) | Guided compatibility review, supported HTTP mappings, and non-runnable migration drafts |
 | [HTTPS](https.md) | Verified defaults, opt-in insecure workload requests, and separate trust settings |
 | [Distributed workers](workers.md) | Named catalog, connection checks, tokens, TLS, shared schedules, quotas, and unknown traffic |
-| [Team backend foundations](team-workspace.md) | PostgreSQL commands, Keycloak/LDAP integration boundary, implemented checks and pending team HTTP work |
+| [Team backend foundations](team-workspace.md) | PostgreSQL setup, separate Keycloak sign-in/session service, LDAP boundary and pending team Tests work |
 | [Kubernetes deployment](kubernetes.md) | Dashboard-only or worker-fleet setup, startup variables, NGINX TLS, Secrets, and persistent state |
 | [Generator diagnostics](diagnostics.md) | Process resources, connection reuse, HTTP timings, and instrumentation limits |
 | [Target-server telemetry](telemetry.md) | Selected exporter series, authentication, gaps, counter resets, and coverage |

@@ -50,17 +50,21 @@ planned; do not infer support from the control-plane CA flags.
 ## Team backend implementation boundary
 
 The optional PostgreSQL repository and Keycloak-compatible OIDC verifier are
-backend foundations. They are not connected to dashboard routes or browser
-sessions. The `workspace` administration commands do not turn the current
-personal dashboard into an authenticated team service. Do not expose existing
-raw-configuration or download endpoints to teammates on the assumption that
+backend foundations. The separate `workspace serve` service implements browser
+sign-in, durable hashed sessions and CSRF-protected local logout. It does not
+serve personal dashboard routes or turn that dashboard into a team service.
+Do not expose existing raw-configuration or download endpoints to teammates on the assumption that
 repository role checks protect those endpoints.
 
 The foundation verifies remote database TLS and OIDC transport, uses exact
 issuer/subject identities and current persisted memberships, and commits
 repository mutations with metadata-only audit events. Managed secret references,
-allowed destinations, browser session/CSRF protection, and the shared executor
-remain pending. LDAP federation stays in Keycloak. See
+allowed destinations and the shared executor remain pending. Pending login
+verifiers are encrypted and bound to the initiating browser; session identity
+and roles come from current membership. Disabling a member deletes their
+sessions. Keycloak/LDAP global logout and disable-event propagation are not
+implemented; local sessions expire no later than the ID token or eight hours.
+LDAP federation stays in Keycloak. See
 [team backend foundations](docs/team-workspace.md) for setup and verification limits.
 
 ## Credentials and exported data

@@ -58,22 +58,34 @@ async function main() {
       throw Error('Fixture is not exclusively loopback-bound.');
     }
     const dsn = `postgres://gometer_fixture:${password}@${address}/gometer_test_workspace?sslmode=disable`;
+    let verificationOutput = '';
     const code = await new Promise((resolve, reject) => {
       // Packages share one disposable schema, so run them sequentially.
       testProcess = spawn('go', [
-        'test', '-race', '-p=1', './internal/workspace', './internal/cli',
-        '-run', 'TestPostgres|TestWorkspace|TestDatabase', '-count=1',
+        'test', '-race', '-p=1', './internal/workspace', './internal/cli', './internal/team',
+        '-run', 'TestPostgres|TestWorkspace|TestDatabase', '-count=1', '-v',
       ], {
         cwd: repo,
-        stdio: 'inherit',
+        stdio: ['ignore', 'pipe', 'inherit'],
         env: {...process.env, GOMETER_TEST_DATABASE_URL: dsn},
       });
+      testProcess.stdout.on('data', chunk => {
+        verificationOutput += chunk;
+        process.stdout.write(chunk);
+      });
       testProcess.once('error', reject);
-      testProcess.once('exit', code => resolve(code ?? 1));
+      testProcess.once('close', code => resolve(code ?? 1));
     });
     testProcess = undefined;
     checkInterruption();
     if (code !== 0) throw Error('Workspace PostgreSQL integration tests failed.');
+    const skipped = [...verificationOutput.matchAll(/--- SKIP: (TestPostgres\w+)/g)]
+      .map(match => match[1])
+      .filter(name => name !== 'TestPostgresTeamBrowser' || process.env.GOMETER_TEAM_BROWSER === '1');
+    if (skipped.length || !verificationOutput.includes('--- PASS: TestPostgresWorkspaceAdministrationCommands') ||
+        !verificationOutput.includes('--- PASS: TestPostgresWorkspaceServeStartsWithEnvironment')) {
+      throw Error('Required PostgreSQL cases were skipped or did not run.');
+    }
     console.log('PostgreSQL fixture tests passed; no personal workspace or external database was used.');
   } finally {
     try {

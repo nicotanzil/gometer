@@ -35,6 +35,7 @@ Usage:
   gometer workspace migrate
   gometer workspace check
   gometer workspace oidc-check
+  gometer workspace serve
   gometer version
 
 Startup flags override GOMETER_* environment settings.
