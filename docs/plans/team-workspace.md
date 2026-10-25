@@ -1,7 +1,8 @@
 # Shared team workspace implementation
 
-Status: local implementation in progress, 25 October 2026. Release held until the
-full team workspace is complete. No deployment.
+Status: local implementation in progress, 25 October 2026. The user now
+authorizes v0.9.0 as an authoring milestone; full team execution remains pending.
+No deployment.
 
 The user selected Kubernetes with PostgreSQL and existing company SSO through
 Keycloak OIDC with LDAP User Federation. Shared workload credentials and sensitive data will use managed secret
@@ -133,7 +134,7 @@ reference creation/update, CSRF/stale-write rejection, sign-in/reload/logout and
 responsive themes. The source vulnerability scan reported no known reachable
 vulnerabilities. The mounted-file rotation and confinement fixtures also passed on Linux/ARM64
 in an isolated container. The completed secret-reference and shared-document milestones are included in
-the next implementation commit. No real cluster projection,
+commit `b3371f5`. No real cluster projection,
 company Keycloak/LDAP, executor or secret-backed workload was exercised.
 
 ## Approved public fields and execution policy — 25 October 2026
@@ -159,20 +160,46 @@ Verified locally: `make check build`, disposable PostgreSQL migration, current-r
 revision-race, audit rollback and size-boundary checks, plus signed-in Chromium
 create/read/edit/copy/export and CSRF/stale-write rejection. These APIs do not read
 mounts or dispatch workloads.
-The shared editor, secret-backed execution and the full team workspace are not
-complete. No release tag or push is authorized before that work is finished.
+At this backend checkpoint, the shared editor, secret-backed execution and the
+full team workspace were not complete; the next section records the editor work.
+The initial release hold at this checkpoint is superseded by the authorization
+recorded below.
+
+## Shared Tests editor and private drafts — 25 October 2026
+
+Implemented locally after `b3371f5`: authenticated Tests-first editing, shared
+library filters/search/attribution, common request/traffic forms, full public JSON,
+managed-reference selectors, shared canvas reuse, saved copy/export, private
+PostgreSQL drafts (migration 005), conditional draft saves/deletes and deliberate
+conflict recovery. Valid drafts survive browser restart and are private to their
+author; even administrators cannot read another actor's draft through the API.
+Invalid/unapplied text remains in the tab and blocks navigation. No workload data
+or token is stored in browser storage. Public-only journeys support canvas edits;
+bound journeys use previews to prevent silent movement of positional secret paths.
+The user guide describes this limit and explicit Advanced editing.
+
+The PostgreSQL and signed-in Chromium suites passed ownership, role, migration,
+race/audit, reload, two-tab conflict, viewer, delayed-response account isolation
+and responsive-theme checks. Full project checks/builds and the existing personal
+dashboard/canvas browser regression passed. See
+[the editor guide](../team-editor.md). The editor milestone is included in the
+v0.9.0 release commit.
+No executor, workload mount or company/cluster acceptance was exercised.
 
 ## Next slice
 
-Connect the team Tests UI and draft/conflict recovery to the shared document APIs,
-then build durable submissions and the separate serial executor. Resolve mounted
+Build durable submissions and the separate serial executor. Resolve mounted
 credentials only inside execution and keep them out of errors, results, captures,
-logs, saved definitions and recovered drafts.
+logs, saved definitions and recovered drafts. Complete stable secret-target
+identities before enabling structural canvas edits on secret-bound journeys.
 
 ## Team release gates — 25 October 2026
 
-The completed foundations are not a complete shared workspace. Keep version
-0.9.0 unpublished until the remaining product scope is implemented and verified.
+The completed authoring milestone is not a complete shared execution workspace.
+The user subsequently requested committing and pushing a new tag, superseding
+the earlier release hold. Publish v0.9.0 with the incomplete execution scope
+explicit in the release notes. The remaining gates below still apply to a
+complete shared execution release.
 The release workflow publishes executable archives, a GitHub Release and
 container images when a version tag is pushed.
 
@@ -182,7 +209,9 @@ container images when a version tag is pushed.
 - [x] Resolve public-field/export and destination policies (any reachable destination).
 - [ ] Complete managed secrets: persisted bindings and public read/copy/export are
   implemented; execution, logs, errors, results and recovered drafts remain pending.
-- [ ] Implement shared Tests authoring and safe revision-conflict/draft recovery.
+- [x] Implement shared Tests authoring and safe revision-conflict/draft recovery.
+- [ ] Preserve stable secret targets through structural canvas edits; secret-bound
+  journeys currently use a safe preview and explicit Advanced editing.
 - [ ] Implement durable, idempotent FIFO submissions and one atomic workspace slot.
 - [ ] Execute through a dedicated executor with current authorization, destination
   checks and immutable worker selection; no silent fallback or uncertain replay.
@@ -200,3 +229,12 @@ The release workflow now requires `make test-workspace` before packaging or
 publishing, in addition to `make check`. This runs a disposable PostgreSQL fixture
 and rejects silently skipped required database/CLI tests. It does not replace
 the pending browser, executor, cluster or company SSO acceptance gates above.
+
+## v0.9.0 milestone release authorization — 25 October 2026
+
+After reviewing the implemented editor and remaining queue/executor work, the
+user requested committing and pushing a new version tag. Release v0.9.0 as shared
+authoring, with execution and deployment limitations explicit. Exclude unrelated
+forms prototypes and the JMX import plan. The tag triggers GitHub assets and GHCR
+images; it does not authorize a deployment. Validate the exact committed source
+before tagging.

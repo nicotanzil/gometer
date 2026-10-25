@@ -6,7 +6,7 @@ ARG TARGETOS
 ARG TARGETARCH
 COPY . .
 
-ARG VERSION=0.8.0-dev
+ARG VERSION=0.9.0-dev
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -trimpath \
     -ldflags="-s -w -X gometer/internal/cli.Version=${VERSION}" \
@@ -14,5 +14,6 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
 
 FROM scratch
 LABEL org.opencontainers.image.source="https://github.com/nicotanzil/gometer"
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /out/gometer /gometer
 ENTRYPOINT ["/gometer"]

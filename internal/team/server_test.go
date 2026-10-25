@@ -402,8 +402,19 @@ func TestPostgresTeamBrowser(t *testing.T) {
 		t.Skip("optional Playwright verification")
 	}
 	e := environment(t)
+	admin, err := e.db.ResolveMember(context.Background(), e.wid, e.config.Issuer, "alice-subject")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = e.db.SetMember(context.Background(), e.wid, admin.ID, workspace.Identity{Issuer: e.config.Issuer, Subject: "browser-viewer", DisplayName: "Browser viewer"}, "viewer", true); err != nil {
+		t.Fatal(err)
+	}
+	viewerToken, _, err := e.db.NewSession(context.Background(), e.wid, e.config.Issuer, "browser-viewer", time.Now().Add(5*time.Minute), "")
+	if err != nil {
+		t.Fatal(err)
+	}
 	command := exec.Command("node", "../../scripts/test-team-browser.cjs")
-	command.Env = append(os.Environ(), "GOMETER_TEAM_FIXTURE_URL="+e.app.URL)
+	command.Env = append(os.Environ(), "GOMETER_TEAM_FIXTURE_URL="+e.app.URL, "GOMETER_TEAM_VIEWER_TOKEN="+viewerToken)
 	if out, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("browser: %v\n%s", err, out)
 	} else {

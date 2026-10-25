@@ -214,3 +214,27 @@ func (d *Database) CopySharedDefinition(ctx context.Context, wid, actorID, id st
 	}
 	return saved, nil
 }
+
+// ValidateSharedDefinition checks authoring input and current references without
+// persisting a definition, reading a mounted source or contacting a target.
+func (d *Database) ValidateSharedDefinition(ctx context.Context, wid, actorID string, raw []byte) error {
+	doc, c, err := sharedtest.Parse(raw)
+	if err != nil || !validText(c.Name, 256) {
+		return sharedtest.ErrInvalid
+	}
+	tx, err := d.pool.Begin(ctx)
+	if err != nil {
+		return ErrUnavailable
+	}
+	defer tx.Rollback(ctx)
+	if _, err = require(ctx, tx, wid, actorID, false); err != nil {
+		return err
+	}
+	if err = validateBindings(ctx, tx, wid, doc); err != nil {
+		return err
+	}
+	if tx.Commit(ctx) != nil {
+		return ErrUnavailable
+	}
+	return nil
+}

@@ -35,12 +35,15 @@ func testRevision(w http.ResponseWriter, r *http.Request, id string) (int64, boo
 	return revision, true
 }
 func sharedInput(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
+	return jsonInput(w, r, config.MaxConfigBytes)
+}
+func jsonInput(w http.ResponseWriter, r *http.Request, limit int64) ([]byte, bool) {
 	media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || media != "application/json" {
 		apiFailure(w, 415, "Use application/json.")
 		return nil, false
 	}
-	data, err := io.ReadAll(http.MaxBytesReader(w, r.Body, config.MaxConfigBytes))
+	data, err := io.ReadAll(http.MaxBytesReader(w, r.Body, limit))
 	if err != nil {
 		apiFailure(w, 400, "Shared test exceeds the input bound.")
 		return nil, false
@@ -55,6 +58,18 @@ func sharedResult(w http.ResponseWriter, status int, d workspace.SharedDefinitio
 	apiJSON(w, status, d)
 }
 func (s *Server) sharedTests(w http.ResponseWriter, r *http.Request, actorID string) {
+	if r.URL.Path == "/api/tests/validate" && r.Method == "POST" && r.URL.RawQuery == "" {
+		raw, ok := sharedInput(w, r)
+		if !ok {
+			return
+		}
+		if err := s.db.ValidateSharedDefinition(r.Context(), s.workspaceID, actorID, raw); err != nil {
+			repositoryFailure(w, err)
+			return
+		}
+		apiJSON(w, 200, map[string]bool{"valid": true})
+		return
+	}
 	collection := r.URL.Path == "/api/tests"
 	if collection && r.Method == "GET" {
 		s.tests(w, r, actorID)

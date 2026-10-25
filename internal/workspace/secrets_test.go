@@ -142,7 +142,7 @@ func TestPostgresSecretMigrationPreservesDefinitionsAndSessions(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Reproduce the preceding committed schema without changing migration 001/002.
-	if _, err = db.pool.Exec(ctx, `ALTER TABLE gometer.test_definitions DROP COLUMN shared_document; DELETE FROM gometer.schema_migrations WHERE version=4; DROP TABLE gometer.secret_references; DELETE FROM gometer.schema_migrations WHERE version=3`); err != nil {
+	if _, err = db.pool.Exec(ctx, `DROP TABLE gometer.test_drafts; DELETE FROM gometer.schema_migrations WHERE version=5; ALTER TABLE gometer.test_definitions DROP COLUMN shared_document; DELETE FROM gometer.schema_migrations WHERE version=4; DROP TABLE gometer.secret_references; DELETE FROM gometer.schema_migrations WHERE version=3`); err != nil {
 		t.Fatal(err)
 	}
 	if err = db.Check(ctx); !errors.Is(err, ErrSchema) {

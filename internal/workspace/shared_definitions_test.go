@@ -199,7 +199,7 @@ func TestPostgresSharedMigrationPreservesPrivateDefinitionsSessionsAndReferences
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.pool.Exec(ctx, `ALTER TABLE gometer.test_definitions DROP COLUMN shared_document; DELETE FROM gometer.schema_migrations WHERE version=4`); err != nil {
+	if _, err = db.pool.Exec(ctx, `DROP TABLE gometer.test_drafts; DELETE FROM gometer.schema_migrations WHERE version=5; ALTER TABLE gometer.test_definitions DROP COLUMN shared_document; DELETE FROM gometer.schema_migrations WHERE version=4`); err != nil {
 		t.Fatal(err)
 	}
 	if err = db.Migrate(ctx); err != nil {

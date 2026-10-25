@@ -22,7 +22,8 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	tests := path == "/api/tests" || strings.HasPrefix(path, "/api/tests/")
 	secrets := path == "/api/secret-references" || strings.HasPrefix(path, "/api/secret-references/")
-	if !tests && !secrets {
+	drafts := path == "/api/drafts" || strings.HasPrefix(path, "/api/drafts/")
+	if !tests && !secrets && !drafts {
 		http.NotFound(w, r)
 		return
 	}
@@ -32,7 +33,7 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 		authError(w, err)
 		return
 	}
-	if r.Method != "GET" && r.Method != "POST" && r.Method != "PUT" {
+	if r.Method != "GET" && r.Method != "POST" && r.Method != "PUT" && !(drafts && r.Method == "DELETE") {
 		w.Header().Set("Allow", "GET, POST, PUT")
 		apiFailure(w, http.StatusMethodNotAllowed, "Method is not supported.")
 		return
@@ -43,6 +44,8 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 	}
 	if tests {
 		s.sharedTests(w, r, session.Member.ID)
+	} else if drafts {
+		s.drafts(w, r, session.Member.ID)
 	} else {
 		s.secrets(w, r, session.Member.ID)
 	}
@@ -196,6 +199,8 @@ func repositoryFailure(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, sharedtest.ErrInvalid):
 		apiFailure(w, 400, "Invalid shared test. Use public_config and secret references with empty destination fields.")
+	case errors.Is(err, workspace.ErrDraftLimit):
+		apiFailure(w, 409, "You have 10 drafts. Remove an old draft before creating another.")
 	case errors.Is(err, workspace.ErrForbidden):
 		apiFailure(w, 403, "Workspace action is not permitted.")
 	case errors.Is(err, workspace.ErrConflict):

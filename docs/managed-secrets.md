@@ -6,7 +6,8 @@ Status: local implementation, 25 October 2026. The reference catalog, mounted-fi
 reader and authenticated metadata APIs are implemented. Explicitly public test
 documents support managed bindings, authoring, copy and export through the
 [shared Tests API](shared-tests.md). Credential resolution during execution,
-the shared editor, durable queue and executor remain pending. This milestone does not make secret placeholders in
+the durable queue and executor remain pending. The [shared editor](team-editor.md)
+uses reference selectors and never loads mounted values. This milestone does not make secret placeholders in
 personal configurations executable.
 
 ## What a reference represents

@@ -30,14 +30,15 @@ globalThis.GoMeterJourneyEditor = (() => {
     }
     q('.je-mobile-tabs [data-panel="canvas"]').addEventListener('click',()=>mobilePanel('canvas'));
     q('.je-mobile-tabs [data-panel="inspector"]').addEventListener('click',()=>mobilePanel('inspector'));
-    q('h2').textContent=previewOnly?'Imported journey preview':readonly?'Journey results':'Journey canvas';
-    q('.je-subtitle').textContent=previewOnly?'Inspect the mapped requests and loops. No workload traffic is sent.':readonly?'Observed HTTP attempts and skipped steps from this run.':'Select a node to edit requests, branch conditions, or loop limits.';
+    q('h2').textContent=options.title|| (previewOnly?'Imported journey preview':readonly?'Journey results':'Journey canvas');
+    q('.je-subtitle').textContent=options.subtitle|| (previewOnly?'Inspect the mapped requests and loops. No workload traffic is sent.':readonly?'Observed HTTP attempts and skipped steps from this run.':'Select a node to edit requests, branch conditions, or loop limits.');
     const guide=q('.je-guide');
     guide.textContent='Solid arrows show execution order. Dotted links show extracted variables used later. Select a request for headers, body, checks, and extractions. Drag nodes to reorder or move between paths; the inspector also has Move up/down and Move to path controls. Drag the canvas to pan, or use Fit and zoom. The test failure action decides whether a failed request skips later steps, continues the journey, stops this user, or stops the entire test. Branches choose a True or False path using current variables. Loops repeat a body with a fixed count or a bounded while condition. Invalid conditions, deadlines, cancellation, and exhausted while limits always stop the current journey.';
     if(previewOnly)guide.textContent='Solid arrows show execution order. Select a request or loop to inspect its converted configuration. Drag the background to pan, or use Fit and zoom. This preview has no execution measurements or editing controls. Save the import and open it in the builder to modify or run the journey.';
+    if(options.guide)guide.textContent=options.guide;
     const actions=q('[data-actions]');
     actions.append(button('How this works',()=>{guide.hidden=!guide.hidden;},'je-button je-quiet'));
-    if(!readonly) for(const [label,action,cls] of [['Test settings',options.settings,'je-button'],['Validate',()=>validate(),'je-button'],['Save scenario',()=>invoke(options.save),'je-button'],['Start run',()=>invoke(options.start),'je-button je-primary']]) actions.append(button(label,action,cls));
+    if(!readonly) for(const [label,action,cls] of [['Test settings',options.settings,'je-button'],['Validate',()=>validate(),'je-button'],[options.saveLabel||'Save scenario',()=>invoke(options.save),'je-button'],...(options.start?[['Start run',()=>invoke(options.start),'je-button je-primary']]:[])]) actions.append(button(label,action,cls));
     function message(text,bad=false) {const n=q('.je-message');n.hidden=!text;n.textContent=text;n.classList.toggle('je-bad',bad);}
     function draft(key,error='') {
       if(error)errors.set(key,error);else errors.delete(key);
@@ -148,7 +149,7 @@ globalThis.GoMeterJourneyEditor = (() => {
     function renderFooter() {
       const footer=q('.je-footer'),issues=M.dependencies(config,si).steps.flatMap((s,i)=>s.missing.map(name=>`${M.stepName(entries()[i].step,i)} needs {{${name}}}`));footer.replaceChildren();
       footer.append(el('span',previewOnly?`${entries().length} mapped flow nodes · preview only`:readonly?`${report?.scenarios?.[si]?.journeys?.completed??0} completed journeys · per-step cards show HTTP measurements`:issues.length?`${issues.length} missing variable reference(s): ${issues.join('; ')}`:`${entries().length} flow nodes · ${totalSteps()} across this test`));footer.classList.toggle('je-bad',!readonly&&!!issues.length);
-      if(!readonly)footer.append(button('Undo',undo,'je-link'));footer.append(el('small',previewOnly?'Saving an import does not start a test.':readonly?'Step p95 values cannot be added to get journey p95.':'Editing and previewing send no workload traffic.'));
+      if(!readonly)footer.append(button('Undo',undo,'je-link'));footer.append(el('small',previewOnly?(options.previewFooter||'Saving an import does not start a test.'):readonly?'Step p95 values cannot be added to get journey p95.':'Editing and previewing send no workload traffic.'));
       if(!readonly)footer.querySelector('button').disabled=!history.length;
     }
     function field(container,label,value,apply,opts={}) {

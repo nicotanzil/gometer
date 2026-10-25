@@ -2,9 +2,10 @@
 
 [Documentation](README.md) · [Team setup](team-workspace.md) · [Managed secrets](managed-secrets.md)
 
-Status: backend implementation, 25 October 2026. Shared create, read, update,
-copy and export APIs are implemented. The shared editor, durable queue, executor
-and resolution of mounted secret values during execution remain pending. These
+Status: local implementation, 25 October 2026. Shared create, read, update,
+copy and export APIs and the [shared Tests editor](team-editor.md) are implemented.
+The durable queue, executor and resolution of mounted secret values during
+execution remain pending. These
 APIs never start a test or read a secret file.
 
 ## Public and concealed fields
@@ -136,5 +137,6 @@ authorization, source concealment, conditional edits, races, audit rollback and
 migration preservation. With `GOMETER_TEAM_BROWSER=1` and the browser dependencies
 in [Contributing](../CONTRIBUTING.md), the fixture additionally exercises creation,
 read, update, copy, export and stale/CSRF rejection from a real signed-in Chromium
-page. These are backend/API checks; they do not establish a completed editor,
-executor, company LDAP integration or live Kubernetes deployment.
+page. The expanded browser fixture also verifies the shared editor and private-draft
+recovery. It does not establish a completed executor, company LDAP integration
+or live Kubernetes deployment.

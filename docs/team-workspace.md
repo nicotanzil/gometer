@@ -6,8 +6,9 @@ Status: local implementation, 25 October 2026. PostgreSQL storage, OIDC
 verification and a separate browser sign-in service are implemented. The
 personal dashboard still uses JSON storage. Team Tests metadata and secret-reference
 APIs and explicitly public shared-test authoring/copy/export are available;
-execution-time secret resolution, the shared editor, durable queue, executor and
-team Kubernetes manifests are pending. See [shared test documents](shared-tests.md)
+the [shared Tests editor](team-editor.md) and author-private recoverable drafts
+are available. Execution-time secret resolution, durable queue, executor and team
+Kubernetes manifests are pending. See [shared test documents](shared-tests.md)
 for public-field classification and the unrestricted executor destination model.
 Setting a database URL does not switch `gometer ui` to team mode or import files.
 
@@ -27,7 +28,7 @@ flowchart LR
 
 The separate `workspace serve` command implements this browser sign-in flow and
 the authenticated team APIs.
-It is not the shared Tests dashboard.
+After sign-in it opens the shared Tests editor. The run queue is not enabled.
 GoMeter has no LDAP bind DN, directory URL or LDAP password setting. LDAP
 federation and directory authentication stay in Keycloak. Keycloak documents its
 [OIDC discovery and endpoints](https://www.keycloak.org/securing-apps/oidc-layers)
@@ -168,7 +169,7 @@ The service offers:
 
 | Route | Behavior |
 | --- | --- |
-| `GET /` | Sign-in screen or current member and sign-out form |
+| `GET /` | Sign-in screen or authenticated Tests editor and sign-out form |
 | `POST /auth/login` | Same-origin sign-in initiation, redirected to Keycloak |
 | `GET /auth/callback` | Browser-bound, single-use code exchange after Keycloak navigation |
 | `GET /api/session` | Current member, expiry and session-bound CSRF token; authenticated only |
@@ -176,6 +177,7 @@ The service offers:
 | `GET /api/tests` and `GET /api/tests/{id}` | Current-member test metadata; All/My filtering and author search |
 | `GET /api/secret-references` and `GET /api/secret-references/{id}` | Reference metadata; source filenames and values omitted |
 | `POST /api/secret-references` and `PUT /api/secret-references/{id}` | Admin-only, CSRF-protected reference changes; updates require If-Match |
+| `/api/drafts` and `/api/drafts/{id}` | Author-private draft metadata/read, conditional save/delete and CSRF checks |
 | Shared test document routes | Public read/export for enabled members; operator/admin create/update/copy with CSRF and revision checks |
 
 The [managed-secret and metadata API guide](managed-secrets.md) describes the

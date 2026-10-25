@@ -18,7 +18,7 @@ import (
 	"gometer/internal/telemetry"
 )
 
-var Version = "0.8.0-dev"
+var Version = "0.9.0-dev"
 
 const help = `GoMeter — HTTP load and stress testing
 

@@ -22,13 +22,14 @@ import (
 //go:embed migrations/*.sql
 var migrations embed.FS
 
-const schemaVersion = 4
+const schemaVersion = 5
 
-var migrationFiles = []string{"001_workspace.sql", "002_sessions.sql", "003_secret_references.sql", "004_shared_documents.sql"}
+var migrationFiles = []string{"001_workspace.sql", "002_sessions.sql", "003_secret_references.sql", "004_shared_documents.sql", "005_drafts.sql"}
 
 const migrationLock int64 = 0x676f6d65746572
 
 var (
+	ErrDraftLimit  = errors.New("draft library is full; remove an old draft before creating another")
 	ErrUnavailable = errors.New("workspace database unavailable; check connectivity and credentials")
 	ErrSchema      = errors.New("workspace database schema is not compatible; run workspace migrate with this binary")
 	ErrForbidden   = errors.New("workspace action is not permitted")

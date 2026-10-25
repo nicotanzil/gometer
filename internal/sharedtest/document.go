@@ -33,7 +33,7 @@ type Document struct {
 // fields. A browser, database and executor must not interpret different values.
 func Parse(raw []byte) (Document, config.Config, error) {
 	var d Document
-	if len(raw) > config.MaxConfigBytes || !unambiguousJSON(raw) {
+	if len(raw) > config.MaxConfigBytes || !UnambiguousJSON(raw) {
 		return d, config.Config{}, ErrInvalid
 	}
 	dec := json.NewDecoder(bytes.NewReader(raw))
@@ -228,7 +228,9 @@ func credentialHeadersBound(c config.Config, bindings map[string]bool) bool {
 	return true
 }
 
-func unambiguousJSON(raw []byte) bool {
+// UnambiguousJSON rejects duplicate keys, case variants, trailing values and
+// excessive nesting before decoding a typed document or its API envelope.
+func UnambiguousJSON(raw []byte) bool {
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.UseNumber()
 	var value func(int) bool

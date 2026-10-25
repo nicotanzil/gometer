@@ -178,15 +178,20 @@ Stress and telemetry examples intentionally overload the demo and normally retur
 | Journeys and migration | [Journeys](docs/scenarios.md), [CSV datasets](docs/datasets.md), [JMeter import](docs/jmx-import.md) |
 | Results and diagnostics | [Measurements](docs/measurements.md), [diagnostics](docs/diagnostics.md), [telemetry](docs/telemetry.md) |
 | Deployment and operations | [Workers](docs/workers.md), [Kubernetes](docs/kubernetes.md), [operations](docs/operations.md) |
+| Team authoring milestone | [Team setup](docs/team-workspace.md), [shared editor](docs/team-editor.md), [v0.9.0 scope](docs/releases/v0.9.0.md) |
 | Security and adoption | [Security](SECURITY.md), [HTTPS](docs/https.md), [readiness](docs/readiness.md) |
 | Development | [Contributing](CONTRIBUTING.md), [architecture](docs/architecture.md), [roadmap](ROADMAP.md) |
 
 ## Project status
 
-GoMeter is in active development. The dashboard is single-user and listens on
+GoMeter is in active development. The personal dashboard is single-user and listens on
 loopback by default. Remote access requires a private authenticated ingress;
 remote workers use a separate authenticated control plane. Review the
 [readiness gates](docs/readiness.md) before enterprise adoption.
+
+The separate team service supports shared authoring with PostgreSQL, OIDC and
+private drafts. Team queued execution, the dedicated executor and execution-time
+secret resolution remain pending; see the [v0.9.0 scope](docs/releases/v0.9.0.md).
 
 Distributed users, browser JavaScript execution, and non-HTTP adapters are not
 supported. Recording and additional authentication options are planned. Full

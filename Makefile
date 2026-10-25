@@ -9,6 +9,7 @@ test: test-ui
 	go test -race ./...
 
 test-ui:
+	$(NODE) --check internal/team/assets/workspace.js
 	$(NODE) --check internal/dashboard/assets/theme.js
 	$(NODE) --check internal/dashboard/assets/navigation.js
 	$(NODE) --check internal/dashboard/assets/workers.js

@@ -1,5 +1,5 @@
-// Package team serves the staged team sign-in boundary. Personal dashboard APIs
-// are deliberately absent until shared secret and destination policies exist.
+// Package team serves the authenticated shared workspace. Personal dashboard
+// APIs and workload execution are deliberately separate.
 package team
 
 import (
@@ -76,7 +76,7 @@ func Serve(ctx context.Context, address string, s *Server, output io.Writer) err
 		case <-stopped:
 		}
 	}()
-	fmt.Fprintf(output, "GoMeter team sign-in: %s\nTeam listener: %s\nTLS ingress is required. Team editing and execution are not enabled.\n", s.origin, listener.Addr())
+	fmt.Fprintf(output, "GoMeter team workspace: %s\nTeam listener: %s\nTLS ingress is required. Team Tests editing is enabled; execution is not available.\n", s.origin, listener.Addr())
 	err = server.Serve(listener)
 	close(stopped)
 	<-shutdownDone
@@ -90,7 +90,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Referrer-Policy", "no-referrer")
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'self'; connect-src 'self'; form-action 'self' "+s.provider.AuthorizationOrigin()+"; base-uri 'none'; frame-ancestors 'none'")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'self'; form-action 'self' "+s.provider.AuthorizationOrigin()+"; base-uri 'none'; frame-ancestors 'none'")
 	w.Header().Set("Strict-Transport-Security", "max-age=31536000")
 	if r.Host != s.host {
 		http.Error(w, "Use the configured team URL.", http.StatusForbidden)
@@ -125,6 +125,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.URL.Path == "/assets/team.css" && r.Method == "GET":
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
 		io.WriteString(w, stylesheet)
+	case strings.HasPrefix(r.URL.Path, "/assets/") && r.Method == "GET":
+		serveAsset(w, r)
 	case r.URL.Path == "/auth/login" && r.Method == "POST":
 		s.begin(w, r)
 	case callback:
@@ -314,9 +316,13 @@ func (s *Server) home(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	homeTemplate.Execute(w, data)
+	if data.Member != nil {
+		workspaceTemplate.ExecuteTemplate(w, "workspace.html", data)
+	} else {
+		homeTemplate.Execute(w, data)
+	}
 }
 
-var homeTemplate = template.Must(template.New("home").Parse(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>GoMeter · Team sign-in</title><link rel="stylesheet" href="/assets/team.css"></head><body><main><div class="brand">GoMeter <span>TEAM WORKSPACE</span></div>{{if .Member}}<p class="eyebrow">CONNECTED</p><h1>Welcome, {{.Member.Name}}</h1><p>You are signed in as <strong>{{.Member.Role}}</strong>.</p><p class="notice">The shared test editor and run queue are still being built.</p><form action="/auth/logout" method="post"><input type="hidden" name="csrf_token" value="{{.CSRF}}"><button type="submit">Sign out of GoMeter</button></form><p class="footnote">Signing out here ends your GoMeter session. Your company SSO session stays active.</p>{{else}}<p class="eyebrow">COMPANY ACCOUNT</p><h1>Sign in to your workspace</h1><p>Continue with your company account through Keycloak.</p><form action="/auth/login" method="post"><button type="submit">Sign in with company account <span aria-hidden="true">→</span></button></form><p class="footnote">Your directory password is handled by your company identity provider.</p>{{end}}</main></body></html>`))
+var homeTemplate = template.Must(template.New("home").Parse(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>GoMeter · Team sign-in</title><link rel="stylesheet" href="/assets/team.css"></head><body><main><div class="brand">GoMeter <span>TEAM WORKSPACE</span></div><p class="eyebrow">COMPANY ACCOUNT</p><h1>Sign in to your workspace</h1><p>Continue with your company account through Keycloak.</p><form action="/auth/login" method="post"><button type="submit">Sign in with company account <span aria-hidden="true">→</span></button></form><p class="footnote">Your directory password is handled by your company identity provider.</p></main></body></html>`))
 
 const stylesheet = `:root{color-scheme:light dark;font:16px/1.6 system-ui,sans-serif;color:#172334;background:#f3f5f8}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}main{width:min(100%,540px);padding:40px;background:#fff;border:1px solid #dce2ea;border-radius:12px;box-shadow:0 12px 36px #162a4510}.brand{font-size:22px;font-weight:750;display:flex;gap:14px;align-items:center;margin-bottom:44px}.brand span,.eyebrow{font-size:11px;letter-spacing:.12em;font-weight:650;color:#5a6c82}.brand span{border-left:1px solid #dce2ea;padding-left:14px}h1{font-size:28px;line-height:1.25;letter-spacing:-.035em;margin:10px 0 16px;overflow-wrap:anywhere}p{color:#536176}button{font:inherit;background:#245cd8;color:#fff;border:0;border-radius:7px;padding:12px 18px;font-weight:600;cursor:pointer;text-align:left;width:100%;margin-top:16px;display:flex;justify-content:space-between;gap:16px}button:hover{background:#194bb5}button:focus-visible{outline:3px solid #88b1ff;outline-offset:4px}.footnote{font-size:13px;margin:18px 0 0}.notice{padding:12px 14px;background:#f3f5f8;border-radius:6px;font-size:14px}@media(max-width:480px){main{padding:26px}.brand{display:block}.brand span{display:block;border:0;padding:5px 0 0}}@media(prefers-color-scheme:dark){:root{background:#111822;color:#e9edf5}main{background:#1a2432;border-color:#344258}p{color:#afbdd2}.brand span,.eyebrow{color:#9dacc3}.notice{background:#111c2a}}`
