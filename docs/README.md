@@ -29,6 +29,8 @@ contextual explanations, and troubleshooting.
 | [HTTPS](https.md) | Verified defaults, opt-in insecure workload requests, and separate trust settings |
 | [Distributed workers](workers.md) | Named catalog, connection checks, tokens, TLS, shared schedules, quotas, and unknown traffic |
 | [Team backend foundations](team-workspace.md) | PostgreSQL setup, separate Keycloak sign-in/session service, LDAP boundary and pending team Tests work |
+| [Shared test documents](shared-tests.md) | Explicit public fields, managed bindings, safe authoring/copy/export and executor trust |
+| [Managed secrets and team metadata](managed-secrets.md) | Reference catalog, mounted-file boundary, API access and pending execution integration |
 | [Kubernetes deployment](kubernetes.md) | Dashboard-only or worker-fleet setup, startup variables, NGINX TLS, Secrets, and persistent state |
 | [Generator diagnostics](diagnostics.md) | Process resources, connection reuse, HTTP timings, and instrumentation limits |
 | [Target-server telemetry](telemetry.md) | Selected exporter series, authentication, gaps, counter resets, and coverage |

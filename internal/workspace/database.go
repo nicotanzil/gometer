@@ -22,9 +22,9 @@ import (
 //go:embed migrations/*.sql
 var migrations embed.FS
 
-const schemaVersion = 2
+const schemaVersion = 4
 
-var migrationFiles = []string{"001_workspace.sql", "002_sessions.sql"}
+var migrationFiles = []string{"001_workspace.sql", "002_sessions.sql", "003_secret_references.sql", "004_shared_documents.sql"}
 
 const migrationLock int64 = 0x676f6d65746572
 

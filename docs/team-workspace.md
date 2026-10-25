@@ -2,10 +2,13 @@
 
 [Documentation](README.md) · [CLI reference](cli.md)
 
-Status: local implementation, 24 October 2026. PostgreSQL storage, OIDC
+Status: local implementation, 25 October 2026. PostgreSQL storage, OIDC
 verification and a separate browser sign-in service are implemented. The
-personal dashboard still uses JSON storage. Team test APIs, managed secret
-resolution, the durable queue, executor and team Kubernetes manifests are pending.
+personal dashboard still uses JSON storage. Team Tests metadata and secret-reference
+APIs and explicitly public shared-test authoring/copy/export are available;
+execution-time secret resolution, the shared editor, durable queue, executor and
+team Kubernetes manifests are pending. See [shared test documents](shared-tests.md)
+for public-field classification and the unrestricted executor destination model.
 Setting a database URL does not switch `gometer ui` to team mode or import files.
 
 ## Identity flow
@@ -22,7 +25,8 @@ flowchart LR
   GoMeter -->|verified issuer and subject| Membership[(PostgreSQL membership)]
 ```
 
-The separate `workspace serve` command implements this browser sign-in flow.
+The separate `workspace serve` command implements this browser sign-in flow and
+the authenticated team APIs.
 It is not the shared Tests dashboard.
 GoMeter has no LDAP bind DN, directory URL or LDAP password setting. LDAP
 federation and directory authentication stay in Keycloak. Keycloak documents its
@@ -169,9 +173,16 @@ The service offers:
 | `GET /auth/callback` | Browser-bound, single-use code exchange after Keycloak navigation |
 | `GET /api/session` | Current member, expiry and session-bound CSRF token; authenticated only |
 | `POST /auth/logout` | Same-origin, CSRF-protected local logout and audit |
+| `GET /api/tests` and `GET /api/tests/{id}` | Current-member test metadata; All/My filtering and author search |
+| `GET /api/secret-references` and `GET /api/secret-references/{id}` | Reference metadata; source filenames and values omitted |
+| `POST /api/secret-references` and `PUT /api/secret-references/{id}` | Admin-only, CSRF-protected reference changes; updates require If-Match |
+| Shared test document routes | Public read/export for enabled members; operator/admin create/update/copy with CSRF and revision checks |
 
-There are no personal dashboard, test editing, execution, download or export
-APIs on this service. Top-level navigation to the home screen is allowed from
+The [managed-secret and metadata API guide](managed-secrets.md) describes the
+catalog schema, permissions and mounted-file reader boundary. The
+[shared document guide](shared-tests.md) covers explicit public authoring, copy
+and export. Personal raw APIs and execution routes are not mounted here.
+Top-level navigation to the home screen is allowed from
 company portals; cross-site form and session-API requests are rejected.
 LDAP users are not automatically enrolled: an exact
 issuer/subject must already have enabled workspace membership.
@@ -230,9 +241,11 @@ this is not an approved queue or execution-capacity policy.
 
 These are repository guarantees, not a claim that all existing dashboard routes
 now have team authorization. Personal raw-configuration and download APIs remain
-in the personal dashboard. Before team HTTP integration, managed secret references,
-permitted destinations and data/export scopes must be enforced at that boundary.
-Existing personal records are not automatically copied into a shared database.
+in the personal dashboard. Shared HTTP routes require an explicitly classified
+public document and retain managed-reference revisions without resolving values.
+The selected execution model allows any reachable destination; operators must be
+trusted with where they send credentials. Existing personal records are not
+automatically copied into a shared database.
 
 ## Verification
 

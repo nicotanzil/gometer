@@ -65,7 +65,9 @@ database URL. The default checks skip PostgreSQL integration cases without an
 explicit test URL. OIDC tests use a private TLS provider fixture; they do not
 verify a deployed Keycloak or LDAP server. Set `GOMETER_TEAM_BROWSER=1` alongside
 `PLAYWRIGHT_MODULE` and `CHROME_PATH` to include the optional TLS sign-in/sign-out
-browser flow. See [team backend foundations](docs/team-workspace.md).
+browser flow. Release builds require the PostgreSQL fixture checks before
+packaging or publication. See [team backend foundations](docs/team-workspace.md)
+and the [team release gates](docs/plans/team-workspace.md#team-release-gates--25-october-2026).
 
 ## Keep development state separate
 

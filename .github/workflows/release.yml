@@ -54,6 +54,9 @@ jobs:
       - name: Check source
         run: make check
 
+      - name: Verify workspace persistence and authentication
+        run: make test-workspace
+
       - name: Build packages and checksums
         env:
           VERSION: ${{ steps.version.outputs.value }}

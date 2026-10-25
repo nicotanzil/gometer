@@ -15,12 +15,18 @@ import (
 
 const maxDefinitions = 200
 
+// Attribution describes authorship, not the actor's current membership state.
+type Attribution struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 type Definition struct {
 	ID        string            `json:"id"`
 	Name      string            `json:"name"`
 	Revision  int64             `json:"revision"`
-	Creator   Member            `json:"creator"`
-	Editor    Member            `json:"editor"`
+	Creator   Attribution       `json:"creator"`
+	Editor    Attribution       `json:"editor"`
 	CreatedAt time.Time         `json:"created_at"`
 	UpdatedAt time.Time         `json:"updated_at"`
 	Source    *DefinitionSource `json:"source,omitempty"`
@@ -127,7 +133,7 @@ func (d *Database) UpdateDefinition(ctx context.Context, workspaceID, actorID, i
 	if _, err = require(ctx, tx, workspaceID, actorID, true); err != nil {
 		return Definition{}, err
 	}
-	tag, err := tx.Exec(ctx, `UPDATE gometer.test_definitions SET name=$3,config=$4,revision=revision+1,last_edited_by=$5,updated_at=clock_timestamp() WHERE workspace_id=$1 AND id=$2 AND revision=$6`, workspaceID, id, name, json.RawMessage(data), actorID, revision)
+	tag, err := tx.Exec(ctx, `UPDATE gometer.test_definitions SET name=$3,config=$4,shared_document=NULL,revision=revision+1,last_edited_by=$5,updated_at=clock_timestamp() WHERE workspace_id=$1 AND id=$2 AND revision=$6`, workspaceID, id, name, json.RawMessage(data), actorID, revision)
 	if err != nil {
 		return Definition{}, ErrUnavailable
 	}
@@ -232,4 +238,27 @@ func (d *Database) ListDefinitions(ctx context.Context, workspaceID, actorID, qu
 		return nil, ErrUnavailable
 	}
 	return list, nil
+}
+
+// DefinitionMetadata never selects raw configuration, even for administrators.
+func (d *Database) DefinitionMetadata(ctx context.Context, wid, actorID, id string) (Definition, error) {
+	if !ValidID(id) {
+		return Definition{}, ErrNotFound
+	}
+	tx, err := d.pool.Begin(ctx)
+	if err != nil {
+		return Definition{}, ErrUnavailable
+	}
+	defer tx.Rollback(ctx)
+	if _, err = require(ctx, tx, wid, actorID, false); err != nil {
+		return Definition{}, err
+	}
+	item, err := scanDefinition(tx.QueryRow(ctx, `SELECT `+strings.Replace(columns, "t.config", "NULL::jsonb", 1)+definitionFrom+` WHERE t.workspace_id=$1 AND t.id=$2`, wid, id))
+	if err != nil {
+		return Definition{}, err
+	}
+	if tx.Commit(ctx) != nil {
+		return Definition{}, ErrUnavailable
+	}
+	return item, nil
 }

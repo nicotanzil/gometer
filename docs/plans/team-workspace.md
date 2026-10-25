@@ -1,6 +1,7 @@
 # Shared team workspace implementation
 
-Status: local implementation in progress, 24 October 2026. No deployment.
+Status: local implementation in progress, 25 October 2026. Release held until the
+full team workspace is complete. No deployment.
 
 The user selected Kubernetes with PostgreSQL and existing company SSO through
 Keycloak OIDC with LDAP User Federation. Shared workload credentials and sensitive data will use managed secret
@@ -48,8 +49,10 @@ Implemented locally:
 
 No queue limits, secret/export policy, bootstrap identities or recovery override
 policy are approved merely because examples appeared in the mockup. The user
-authorized committing the completed milestones on 24 October 2026. Pushes,
-publication and deployment remain outside the current authorization.
+authorized committing the completed milestones on 24 October 2026. On 25 October
+2026, the user chose to finish the full team workspace before releasing. Do not
+create or push a release tag for the foundations alone. Deployment remains
+outside the current authorization.
 
 ## Backend foundation slice — 24 October 2026
 
@@ -96,14 +99,104 @@ and dark layouts passed at four widths. The CLI test environment now preserves
 only the guarded fixture URL, and the runner rejects silently skipped required
 PostgreSQL cases. Project checks/builds and the local vulnerability scan passed.
 
-The new sign-in slice is uncommitted. No real company Keycloak, LDAP or Kubernetes
+The sign-in slice is committed as `efdd821`. No real company Keycloak, LDAP or Kubernetes
 acceptance was run. Personal dashboard APIs are not exposed by this service.
 Local logout does not end Keycloak SSO; Keycloak/LDAP-only revocation is observed
 at the next sign-in or local expiry. No refresh tokens are stored.
 
+## Secret references and metadata API slice — 25 October 2026
+
+The user selected Kubernetes-mounted secret files for the first source. Implemented
+locally: migration 003 and a workspace-scoped reference catalog with stable IDs,
+public names, revisions, enable/disable state and metadata-only audit. Current
+admins may create/update through CSRF-protected APIs; all enabled members may
+read reference metadata. Responses omit source filenames and values. Empty or
+omitted update keys retain the hidden source. ETag preconditions prevent stale
+retargeting. Source-descriptor lookup rejects viewers, disabled references and
+stale revisions.
+
+The mounted-file reader confines access to an explicit workspace child directory,
+rejects escaping symlinks and invalid/non-regular/empty/oversized files, and bounds
+values at 64 KiB. Projected-volume rotation is read fresh. The HTTP service does
+not open mounts, accept credential values, resolve test placeholders or contact
+the Kubernetes API. No execution or dispatch claims follow from this reader.
+
+Authenticated Tests GET APIs now expose metadata, creator/editor attribution,
+All/My filtering and teammate search. They never select raw configuration.
+Configuration authoring, copy, export, download and execution routes remain closed.
+See [the guide](../managed-secrets.md) for request schemas and remaining policy work.
+
+Verified locally: full project checks/builds; PostgreSQL upgrade preservation,
+current-role and workspace checks, revision races and audit rollback; HTTP
+concealment and invalid-input cases; Chromium same-origin metadata requests,
+reference creation/update, CSRF/stale-write rejection, sign-in/reload/logout and
+responsive themes. The source vulnerability scan reported no known reachable
+vulnerabilities. The mounted-file rotation and confinement fixtures also passed on Linux/ARM64
+in an isolated container. The completed secret-reference and shared-document milestones are included in
+the next implementation commit. No real cluster projection,
+company Keycloak/LDAP, executor or secret-backed workload was exercised.
+
+## Approved public fields and execution policy — 25 October 2026
+
+The user approved read/export of explicitly public fields for all enabled members,
+with managed references for concealed values. The user chose any destination
+reachable by the executor, not an administrator-maintained application allowlist.
+Preserve native URL/same-origin journey validation and current-role checks. This
+choice trusts operators with credential destinations: API concealment cannot
+prevent an operator from recovering a credential at a target they control.
+
+## Shared document backend slice — 25 October 2026
+
+Implemented locally: migration 004, explicit `public_config` plus typed reference
+bindings, current-role authoring APIs, conditional saves/copies, public reads and
+exports. Legacy definitions stay unclassified/private across migration. Binding
+changes require current enabled references at exact revisions; source keys and
+credential values are never selected by authoring/read/export paths. Raw native
+repository updates withdraw any old public document. See
+[shared documents](../shared-tests.md) for limits and the exact API surface.
+
+Verified locally: `make check build`, disposable PostgreSQL migration, current-role,
+revision-race, audit rollback and size-boundary checks, plus signed-in Chromium
+create/read/edit/copy/export and CSRF/stale-write rejection. These APIs do not read
+mounts or dispatch workloads.
+The shared editor, secret-backed execution and the full team workspace are not
+complete. No release tag or push is authorized before that work is finished.
+
 ## Next slice
 
-Define and enforce managed secret references and read/export/destination policy
-before connecting team Tests APIs. Keep actor attribution server-assigned and
-recheck roles at every mutation. Follow with team Tests navigation and conflict
-recovery, then durable submissions and the separate serial executor.
+Connect the team Tests UI and draft/conflict recovery to the shared document APIs,
+then build durable submissions and the separate serial executor. Resolve mounted
+credentials only inside execution and keep them out of errors, results, captures,
+logs, saved definitions and recovered drafts.
+
+## Team release gates — 25 October 2026
+
+The completed foundations are not a complete shared workspace. Keep version
+0.9.0 unpublished until the remaining product scope is implemented and verified.
+The release workflow publishes executable archives, a GitHub Release and
+container images when a version tag is pushed.
+
+- [x] PostgreSQL migrations, explicit bootstrap, membership and current-role checks.
+- [x] Browser sign-in, durable sessions, CSRF checks and local sign-out.
+- [x] Metadata-only Tests APIs, secret-reference catalog and confined file reader.
+- [x] Resolve public-field/export and destination policies (any reachable destination).
+- [ ] Complete managed secrets: persisted bindings and public read/copy/export are
+  implemented; execution, logs, errors, results and recovered drafts remain pending.
+- [ ] Implement shared Tests authoring and safe revision-conflict/draft recovery.
+- [ ] Implement durable, idempotent FIFO submissions and one atomic workspace slot.
+- [ ] Execute through a dedicated executor with current authorization, destination
+  checks and immutable worker selection; no silent fallback or uncertain replay.
+- [ ] Implement Queue/Team views, ownership-aware cancellation and Stop; retain the
+  slot through draining, unknown execution and failed result persistence.
+- [ ] Add team Kubernetes examples and verify migration, backup, restore, executor
+  restart and concurrent submissions using disposable infrastructure.
+- [ ] Complete browser acceptance for shared authoring, queue, results and roles.
+- [ ] Confirm company Keycloak/LDAP and cluster acceptance separately with the
+  operator; local fixtures do not establish deployment readiness.
+- [ ] Validate the exact release commit, packages and checksums before tagging;
+  exclude unrelated prototypes and plans from release commits.
+
+The release workflow now requires `make test-workspace` before packaging or
+publishing, in addition to `make check`. This runs a disposable PostgreSQL fixture
+and rejects silently skipped required database/CLI tests. It does not replace
+the pending browser, executor, cluster or company SSO acceptance gates above.

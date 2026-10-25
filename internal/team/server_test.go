@@ -133,7 +133,7 @@ func environment(t *testing.T) *testEnvironment {
 	}
 	e := &testEnvironment{db: db, key: bytes.Repeat([]byte{9}, 32)}
 	app := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if os.Getenv("GOMETER_TEAM_BROWSER") == "1" {
+		if os.Getenv("GOMETER_TEAM_HTTP_TRACE") == "1" {
 			t.Logf("browser request: %s %s origin=%q site=%q mode=%q dest=%q", r.Method, r.URL.Path, r.Header.Get("Origin"), r.Header.Get("Sec-Fetch-Site"), r.Header.Get("Sec-Fetch-Mode"), r.Header.Get("Sec-Fetch-Dest"))
 		}
 		e.handler.Load().ServeHTTP(w, r)
@@ -280,7 +280,7 @@ func TestPostgresTeamLoginSurvivesInstancesAndLogoutRequiresCSRF(t *testing.T) {
 			t.Fatal("credentials leaked in session metadata")
 		}
 	}
-	for _, path := range []string{"/api/state", "/api/tests", "/api/scenarios", "/download/config/00000000000000000000000000000000"} {
+	for _, path := range []string{"/api/state", "/api/tests/00000000000000000000000000000000/config", "/api/scenarios", "/download/config/00000000000000000000000000000000"} {
 		response, _ = e.request(t, "GET", path, "", cookie)
 		if response.StatusCode != 404 {
 			t.Fatal("personal or unimplemented team API exposed")
