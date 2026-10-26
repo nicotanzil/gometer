@@ -6,10 +6,22 @@ Start with a small local test, learn what its measurements mean, then add journe
 workers, and server telemetry as needed. These guides describe the current source
 checkout. Planned capabilities are identified separately in the roadmap.
 
+## Choose a mode
+
+| Mode | Start here | Available in v0.9.0 |
+| --- | --- | --- |
+| Personal dashboard / CLI | [Install](installation.md), then [run a first test](getting-started.md) | Author, execute and inspect HTTP tests; local JSON storage |
+| Shared team authoring | [Team setup](team-workspace.md), then [shared editor](team-editor.md) | Keycloak sign-in, PostgreSQL Tests, managed references and private drafts; team execution is pending |
+
+[v0.9.0 downloads and checksums](https://github.com/nicotanzil/gometer/releases/tag/v0.9.0)
+are published. Its container image is pending a registry permission fix; see
+[installation](installation.md#container-images) and [release scope](releases/v0.9.0.md).
+
 ## Learn the workflow
 
 | Guide | What you will learn |
 | --- | --- |
+| [Installation](installation.md) | Release platforms, downloads, checksum verification, source builds and upgrades |
 | [Getting started](getting-started.md) | Build, start the demo and dashboard, run a first test, and check its result |
 | [Browser dashboard](dashboard.md) | Create tests, save scenarios, inspect live results, compare runs, and exchange files |
 | [Measurement definitions](measurements.md) | Offered vs delivered demand, request/journey units, percentiles, and verdicts |
@@ -28,7 +40,7 @@ contextual explanations, and troubleshooting.
 | [JMeter JMX import](jmx-import.md) | Guided compatibility review, supported HTTP mappings, and non-runnable migration drafts |
 | [HTTPS](https.md) | Verified defaults, opt-in insecure workload requests, and separate trust settings |
 | [Distributed workers](workers.md) | Named catalog, connection checks, tokens, TLS, shared schedules, quotas, and unknown traffic |
-| [Team backend foundations](team-workspace.md) | PostgreSQL setup, separate Keycloak sign-in/session service, LDAP boundary and pending team Tests work |
+| [Team workspace setup](team-workspace.md) | PostgreSQL setup, Keycloak sign-in, LDAP boundary, membership and shared authoring |
 | [Team Tests editor](team-editor.md) | Shared authoring, managed references, private drafts and conflict recovery |
 | [Shared test documents](shared-tests.md) | Explicit public fields, managed bindings, safe authoring/copy/export and executor trust |
 | [Managed secrets and team metadata](managed-secrets.md) | Reference catalog, mounted-file boundary, API access and pending execution integration |

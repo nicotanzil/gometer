@@ -12,19 +12,22 @@ It is not a certification or a claim that every enterprise requirement is met.
 | Area | Implemented foundation | Remaining adoption gate |
 | --- | --- | --- |
 | Measurement correctness | Explicit demand accounting, bounded histograms, request/journey separation, worker-state validation | Independent repeatability, accuracy, instrumentation-overhead, and comparative benchmarks for supported workloads |
-| Verification | Vet, race-enabled regression fixtures, example validation, executable builds | Required CI/branch checks, a documented supported-platform matrix, and evidence tied to the exact release revision |
+| Verification | Tag-triggered release checks: JavaScript tests, vet, race-enabled Go tests, PostgreSQL integration, executable builds and checksums | Enforced pull-request/branch checks, broader platform runtime acceptance, and retained evidence for each release |
 | Security boundaries | Loopback dashboard by default; optional private-ingress origin checks, strict parsing, default TLS verification, authenticated remote workers, separate exporter credentials | Threat-model/security review, a working private reporting channel, supported-version policy, and remediation ownership |
-| Team access | Local single-user account boundary | An authenticated team service would need a separately designed login/SSO, RBAC, audit, and isolation model |
+| Team access | Separate PostgreSQL/OIDC authoring service with Keycloak sign-in, membership roles, CSRF checks, audit, managed references and private drafts | Company SSO/LDAP acceptance, security review, durable execution, runtime secret concealment and team deployment/recovery |
 | Recovery | Atomic workspace/report writes, graceful cancellation, worker leases, explicit abandoned/incomplete results | Practiced backup/restore, retention ownership, durable worker recovery requirements, and failure drills |
-| Release integrity | Version can be injected at build time; native builds | Release from a verified source snapshot; documented artifact checksums/provenance, signing policy, and release ownership |
+| Release integrity | Versioned tag, verified source snapshot, downloadable platform archives and SHA256SUMS; v0.9.0 artifact digests verified after upload | Container publishing permissions, signing/provenance policy, release ownership and supported-version policy |
 | Compatibility | Versioned result schemas, import consistency checks, documented limitations | Explicit compatibility/migration policy and conformance fixtures for supported external formats/protocols |
 | Operational support | Runbooks, exit codes, diagnostics, telemetry coverage | Owned deployment/resource limits, escalation path, support expectations, and workload-specific capacity evidence |
 | Licensing | License status is explicit in the contribution guide | Maintainer-selected license and distribution/contribution policy; no LICENSE file currently exists |
 
-The current repository does not contain a CI workflow. The `make check` target
-provides local verification; running it once is not equivalent to enforced release
-checks. Screenshots and the bundled demo demonstrate behavior, not production
-capacity or certification.
+The [Release workflow](../.github/workflows/release.yml) runs on version tags.
+For v0.9.0, source checks, PostgreSQL integration and package builds passed.
+The container upload failed on registry permissions; executable downloads were
+then published separately. See [release scope](releases/v0.9.0.md) and the
+[platform and checksum guide](installation.md). A tag-triggered workflow does
+not establish required pull-request checks or branch protection. Screenshots and
+the bundled demo demonstrate behavior, not production capacity or certification.
 
 ## Adoption checklist
 
@@ -53,7 +56,7 @@ the local dashboard. Different organizations may require additional controls.
 Bundled JMeter parity is a roadmap objective. The
 [capability inventory](jmeter-parity.md) labels available, partial, and missing
 families; it is not a component-by-component compatibility percentage. Distributed
-users, additional protocol adapters, recording, JMX/JTL compatibility, extension
+users, additional protocol adapters, recording, broader JMX/JTL compatibility, extension
 APIs, and statistical regression verdicts remain development work.
 
 Track implementation and validated milestones in [ROADMAP.md](../ROADMAP.md).

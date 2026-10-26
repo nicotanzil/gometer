@@ -17,7 +17,19 @@ Node.js, or external frontend assets are required at runtime.
 
 ![GoMeter walkthrough: configure a test, watch live metrics, and review results](docs/images/walkthrough.gif)
 
-## Quick start
+## Install GoMeter 0.9.0
+
+Download the [v0.9.0 release](https://github.com/nicotanzil/gometer/releases/tag/v0.9.0)
+for macOS ARM64, Linux AMD64 or Windows AMD64. Each archive contains the GoMeter
+executable; Go and Node.js are not required. Follow the
+[installation and checksum guide](docs/installation.md) before running it.
+
+The v0.9.0 container image is **pending** a registry permission fix. Build your own
+image for Kubernetes; do not assume `ghcr.io/nicotanzil/gometer:0.9.0` is available.
+The [release notes](docs/releases/v0.9.0.md) describe shared authoring and its
+remaining execution limits.
+
+## Quick start from source
 
 Install **Go 1.27.3 or newer**, then build from a source checkout:
 
@@ -100,6 +112,13 @@ Use **Branches and loops** to explore nested control flow.
 [Flow syntax](docs/scenarios.md#branches-and-loops).
 
 ![Executable branches and loops on the journey canvas](docs/images/journey-flow.png)
+
+### Shared team authoring
+
+Sign in through Keycloak, edit shared tests, and recover private drafts.
+Team queued execution is still pending. [Team editor guide](docs/team-editor.md).
+
+![Shared Tests editor with request settings, managed references and private drafts](docs/images/team-tests.png)
 
 ### JMeter import
 

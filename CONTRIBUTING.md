@@ -68,7 +68,7 @@ verify a deployed Keycloak or LDAP server. Set `GOMETER_TEAM_BROWSER=1` alongsid
 browser flow, shared Tests forms/canvas, actor-private draft recovery, concurrent
 test/draft conflicts, viewer controls and responsive themes. No workload data is
 kept in the browser profile. Release builds require the PostgreSQL fixture checks before
-packaging or publication. See [team backend foundations](docs/team-workspace.md)
+packaging or publication. See [team workspace setup](docs/team-workspace.md)
 and the [team release gates](docs/plans/team-workspace.md#team-release-gates--25-october-2026).
 
 ## Keep development state separate

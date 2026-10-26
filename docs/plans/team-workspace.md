@@ -197,18 +197,20 @@ identities before enabling structural canvas edits on secret-bound journeys.
 
 The completed authoring milestone is not a complete shared execution workspace.
 The user subsequently requested committing and pushing a new tag, superseding
-the earlier release hold. Publish v0.9.0 with the incomplete execution scope
+the earlier release hold. v0.9.0 was published with incomplete execution scope
 explicit in the release notes. The remaining gates below still apply to a
 complete shared execution release.
-The release workflow publishes executable archives, a GitHub Release and
-container images when a version tag is pushed.
+The release workflow builds executable archives and attempts container
+publication when a version tag is pushed. See the publication record below;
+the v0.9.0 registry upload was denied.
 
 - [x] PostgreSQL migrations, explicit bootstrap, membership and current-role checks.
 - [x] Browser sign-in, durable sessions, CSRF checks and local sign-out.
 - [x] Metadata-only Tests APIs, secret-reference catalog and confined file reader.
 - [x] Resolve public-field/export and destination policies (any reachable destination).
 - [ ] Complete managed secrets: persisted bindings and public read/copy/export are
-  implemented; execution, logs, errors, results and recovered drafts remain pending.
+  implemented, including reference-only recovered drafts; execution-time
+  resolution and concealment in logs, errors and results remain pending.
 - [x] Implement shared Tests authoring and safe revision-conflict/draft recovery.
 - [ ] Preserve stable secret targets through structural canvas edits; secret-bound
   journeys currently use a safe preview and explicit Advanced editing.
@@ -222,7 +224,7 @@ container images when a version tag is pushed.
 - [ ] Complete browser acceptance for shared authoring, queue, results and roles.
 - [ ] Confirm company Keycloak/LDAP and cluster acceptance separately with the
   operator; local fixtures do not establish deployment readiness.
-- [ ] Validate the exact release commit, packages and checksums before tagging;
+- [x] Validate the exact v0.9.0 release commit, packages and checksums before tagging;
   exclude unrelated prototypes and plans from release commits.
 
 The release workflow now requires `make test-workspace` before packaging or
@@ -238,3 +240,22 @@ authoring, with execution and deployment limitations explicit. Exclude unrelated
 forms prototypes and the JMX import plan. The tag triggers GitHub assets and GHCR
 images; it does not authorize a deployment. Validate the exact committed source
 before tagging.
+
+## v0.9.0 publication record — 25 October 2026
+
+- Annotated tag `v0.9.0` and `main` were pushed at commit `8f68943`.
+- The exact committed source passed local source, PostgreSQL/browser, executable
+  package and container startup checks. Unrelated prototypes/plans were excluded.
+- [Release workflow](https://github.com/nicotanzil/gometer/actions/runs/40175819158):
+  source checks, PostgreSQL integration and three-platform packaging passed.
+  Image upload failed with `permission_denied: write_package`; the workflow is
+  failed, not a successful complete release run.
+- The user chose to publish downloads while deferring container access.
+  [GitHub release](https://github.com/nicotanzil/gometer/releases/tag/v0.9.0)
+  contains the macOS ARM64, Linux AMD64 and Windows AMD64 archives plus
+  `SHA256SUMS`. All uploaded digests and the public checksum download were verified;
+  the GitHub-built macOS binary reported `GoMeter 0.9.0`.
+- Container publication and deployment remain unperformed. When registry access
+  is corrected, preserve the existing tag and download assets. A full workflow
+  retry must account for the existing release; its create-release step is not an
+  update operation.

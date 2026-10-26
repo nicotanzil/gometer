@@ -6,7 +6,9 @@ These are real captures of the embedded dashboard from the development checkout.
 The result image and worker catalog capture are from 23 October 2026; the other captures are from
 21 October 2026. They show the approved Variant A workspace, Open Scope logo,
 compact system typography, neutral surfaces and expanded/collapsed navigation.
-The captures include local uncommitted work and do not represent a tagged release.
+The captures record local fixture behavior at their capture dates. Their assets
+are included in v0.9.0; they do not establish production or company SSO acceptance.
+The shared Tests capture is from 25 October 2026 and uses IBM Plex typography.
 
 The walkthrough uses a separate bundled-demo process with a private temporary
 workspace: 160 completed HTTP attempts, no request errors or missed arrivals,
@@ -26,6 +28,7 @@ credentials appear in the assets.
 | --- | --- | --- |
 | [walkthrough.gif](walkthrough.gif) | Validated builder → real run → saved verdict and charts | 1440 × 960; 11.38 seconds; looping GIF, 376 KiB |
 | [test-builder.jpg](test-builder.jpg) | Local API baseline, planned demand and saved scenario | Full page, 1440 × 1515 |
+| [team-tests.png](team-tests.png) | Shared authoring, managed-reference selector and private drafts with a disposable signed-in identity | Full page, 1440 × 2336 |
 | [tests-library.png](tests-library.png) | Personal-mode Tests foundation: real saved definitions, revisions and independent copies | Viewport, 1440 × 1000 |
 | [worker-catalog.jpg](worker-catalog.jpg) | Two named local workers, registration form, connection status and setup help | Viewport, 1440 × 1100 |
 | [run-results.jpg](run-results.jpg) | Completed counted baseline, outcome/latency summaries and interactive charts | Viewport, 1440 × 1360 |
@@ -82,5 +85,14 @@ The Tests library image was captured on 23 October 2026 by
 `GOMETER_TESTS_SCREENSHOT` set to the absolute output path. It shows actual
 personal-mode records after two-session conflict and copy checks. This fixture
 sends no workload and contains no real team identities or credentials. The image
-does not imply that PostgreSQL, OIDC, managed secrets or the queue are implemented.
+does not demonstrate PostgreSQL, OIDC, managed secrets or the queue. The separate
+team capture shows authoring; team queued execution remains pending.
 Older captures retain the navigation present on their capture dates.
+
+To reproduce the shared Tests image, run `make test-workspace` with
+`GOMETER_TEAM_BROWSER=1`, `GOMETER_TEAM_SCREENSHOT` set to an absolute `.png`
+path, and the Playwright/Chrome paths described in the
+[team verification guide](../team-workspace.md#verification).
+The disposable PostgreSQL/OIDC/browser fixture checks authoring and private drafts
+before capture. It uses demonstration identities and public workload fields;
+no company LDAP, live workload secrets or team executor is involved.

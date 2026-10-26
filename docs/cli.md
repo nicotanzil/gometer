@@ -171,14 +171,17 @@ requires environment-only `GOMETER_LOGIN_KEY`: base64-encoded 32 random bytes,
 shared across sign-in instances. The OIDC callback must exactly equal the public
 origin plus `/auth/callback`. Migrate and initialize before serving. The backend
 listener is HTTP; a trusted HTTPS ingress is required for browser cookies. Team
-test editing and execution are not enabled. See [session setup](team-workspace.md#browser-sign-in-service).
+test editing, managed-reference selection and private drafts are available; queued
+execution is not enabled. See [session setup](team-workspace.md#browser-sign-in-service)
+and the [editor guide](team-editor.md).
 
 ## Environment
 
-These startup variables describe the current source. The released `0.6.0` image
-predates the new `GOMETER_UI_*`, worker listen/name/TLS, and `GOMETER_CONFIG`
-settings; build a current-source image for environment-based startup. The current
-prefix is `GOMETER_*`; the older `GMETER_*` names are not aliases.
+These startup variables are supported by the v0.9.0 executable downloads and
+current source. The v0.9.0 container image is pending; see
+[installation](installation.md#container-images) before selecting an image.
+The older `0.6.0` image predates the new dashboard/worker startup settings and
+`GOMETER_CONFIG`. The current prefix is `GOMETER_*`; `GMETER_*` names are not aliases.
 
 | Variable | Read by | Purpose |
 | --- | --- | --- |

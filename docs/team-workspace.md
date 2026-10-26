@@ -1,9 +1,10 @@
-# Team workspace backend foundations
+# Team workspace setup
 
 [Documentation](README.md) · [CLI reference](cli.md)
 
-Status: local implementation, 25 October 2026. PostgreSQL storage, OIDC
-verification and a separate browser sign-in service are implemented. The
+Status: shared authoring is included in [v0.9.0](releases/v0.9.0.md), published
+25 October 2026. PostgreSQL storage, OIDC verification and a separate browser
+sign-in service are implemented. The
 personal dashboard still uses JSON storage. Team Tests metadata and secret-reference
 APIs and explicitly public shared-test authoring/copy/export are available;
 the [shared Tests editor](team-editor.md) and author-private recoverable drafts
@@ -160,9 +161,12 @@ The backend serves HTTP behind a trusted HTTPS ingress. Preserve the configured
 Host and expose this service only at that origin. Restrict direct access to the
 backend port. Secure cookies require browser-facing HTTPS; there is no insecure
 sign-in option. Forwarded identity/origin headers do not select users or URLs.
-The current scratch image has no bundled system CA store. Mount trusted CA
-certificates and configure `GOMETER_OIDC_CA` and PostgreSQL `sslrootcert` for
-container use. Native binaries can also use their host system trust store.
+The v0.9.0 Dockerfile includes standard system CA certificates. Its published
+image is still pending; build from source as described in the
+[container guide](kubernetes.md#use-a-release-image-or-build-your-own). For private
+company CAs, mount the trusted certificate and configure `GOMETER_OIDC_CA` and
+PostgreSQL `sslrootcert` as appropriate. Native binaries can use their host system
+trust store. Workload `insecure` does not disable OIDC or database verification.
 Team ingress and manifests are not supplied yet.
 
 The service offers:
@@ -280,9 +284,16 @@ LDAP service, company SSO or Kubernetes deployment. Integration with those syste
 remains a separate acceptance step.
 
 With Playwright and Chrome configured as described in [Contributing](../CONTRIBUTING.md),
-run `GOMETER_TEAM_BROWSER=1 make test-workspace` to include actual browser
-navigation through the local TLS provider fixture, cookie verification, reload
-and sign-out. It checks light/dark themes and four viewport widths. The browser
-flow, PostgreSQL suite, environment-based service startup/shutdown and source
-vulnerability scan were verified locally on 24 October 2026. Company
-Keycloak/LDAP and cluster acceptance remain unverified.
+run `GOMETER_TEAM_BROWSER=1 make test-workspace` to include browser navigation
+through the local TLS provider fixture. It checks sign-in/out, shared request and
+traffic forms, journey edits, author-private drafts, two-tab revision conflicts,
+viewer controls, account changes with delayed responses, two themes and four
+viewport widths. Set `GOMETER_TEAM_SCREENSHOT` to an absolute `.png` output path
+to capture the fixture editor; see [capture notes](images/README.md).
+
+The exact v0.9.0 committed source passed local source, PostgreSQL/browser,
+package and container startup checks on 25 October 2026. The release workflow
+also passed source checks, PostgreSQL integration and packaging; its image upload
+failed on registry permissions. The source vulnerability scan on 24 October 2026
+is separate, dated evidence. Company Keycloak/LDAP and cluster acceptance remain
+unverified. See the [publication record](plans/team-workspace.md#v090-publication-record--25-october-2026).

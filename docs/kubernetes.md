@@ -5,7 +5,10 @@
 GoMeter can run as one dashboard pod, with workers added when distributed load
 is needed. The dashboard is single-user; use a VPN or NGINX access controls
 that authenticate and allowlist users. It stores scenarios and history as JSON files
-on a persistent volume; no database is required.
+on a persistent volume; no database is required. These templates deploy the
+personal dashboard and workers. The separate PostgreSQL/OIDC team service is
+covered by [team setup](team-workspace.md); its Kubernetes manifests and executor
+are still pending.
 
 ## Certificates for the dashboard and workers
 
@@ -121,29 +124,32 @@ replace the environment of a running container. See Kubernetes' guide to
 
 ## Use a release image or build your own
 
-For tags created after the image-publishing workflow is merged, the Release
-action publishes `ghcr.io/nicotanzil/gometer:<version>` for Linux AMD64 and
-ARM64. For example, tag `v0.9.0` would publish `:0.9.0`; this is an example,
-not an announced release. The workflow runs source checks and publishes the
-image before creating the GitHub Release. A manual workflow run does not push
-an image. Check the tag's Release workflow before using its image, then replace
-the example image tags in the manifests with that version or its digest.
+The [v0.9.0 release](releases/v0.9.0.md) has executable downloads, but its
+container upload was denied with `permission_denied: write_package`. Do not use
+`ghcr.io/nicotanzil/gometer:0.9.0` until its publication is confirmed. Build and
+push your own image from the release source if you need it now.
 
-The `v0.8.0` release predates automatic image publishing. If you need to deploy
-that source now, build and push it manually as below. If the `gometer` package
-already exists in GHCR from a manual push, grant `nicotanzil/gometer` **Write**
-access under the package's **Settings → Manage Actions access** before the first
-automated publish.
+The Release workflow is configured to publish Linux AMD64 and ARM64 images at
+`ghcr.io/nicotanzil/gometer:<version>`. Before retrying, a package administrator
+must grant `nicotanzil/gometer` **Write** under the package's
+**Settings → Manage Actions access**. Workflow `packages: write` alone did not
+permit this upload. See GitHub's
+[package access guide](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility).
+A manual workflow run does not push an image. Confirm registry publication and
+its digest before changing deployment manifests. The v0.9.0 downloads were
+published separately after the image step failed; a release page alone is not
+proof that the corresponding image exists.
 
 The templates use `ghcr.io/nicotanzil/gometer:env-startup` as an example tag that
 you build and push from this source checkout. It is not a published release
 claim. The released `0.6.0` image predates the new startup variables; using it
 with `args: ["ui"]` or `args: ["worker"]` ignores those settings and keeps the
-old defaults. Build the current source before applying these templates:
+old defaults. In a checkout of tag `v0.9.0`, build and publish before applying
+these templates:
 
 ```sh
 docker buildx build --platform linux/amd64 \
-  --build-arg VERSION=0.8.0 \
+  --build-arg VERSION=0.9.0 \
   --tag ghcr.io/nicotanzil/gometer:env-startup \
   --push .
 ```
@@ -316,13 +322,13 @@ references to `gometer-worker-tls` or `gometer-worker-ca`. It retains the PVC,
 three stable worker origins, token Secret references, Services and NetworkPolicies.
 The base and F5 overlay keep verified HTTPS worker control as their default.
 
-Build and publish your own current-source image; the HTTP options are absent
-from earlier binaries. The overlay uses `http-workers` as an example tag, not a
-claim that this image is published:
+Build and publish your own image from tag `v0.9.0`; its registry image is still
+pending. The HTTP options are available in v0.9.0 but absent from older binaries.
+The overlay uses `http-workers` as an example tag, not a published image:
 
 ```sh
 docker buildx build --platform linux/amd64 \
-  --build-arg VERSION=0.8.0 \
+  --build-arg VERSION=0.9.0 \
   --tag ghcr.io/nicotanzil/gometer:http-workers --push .
 ```
 

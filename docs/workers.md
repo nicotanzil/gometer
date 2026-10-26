@@ -151,8 +151,9 @@ the templates use the downward API for `GOMETER_WORKER_NAME`; see the
 [startup settings and Secret mappings](kubernetes.md#configure-startup-through-environment-variables).
 
 Flags take precedence over environment settings, including explicit empty flags.
-Restart the process after changing its environment. Use a binary built from the
-current source: released `0.6.0` does not support the new startup variables.
+Restart the process after changing its environment. Use a
+[v0.9.0 executable or source build](installation.md); the older `0.6.0` image does
+not support the new startup variables. The v0.9.0 container image is pending.
 The current prefix is `GOMETER_*`; `GMETER_*` names are not read. See the complete
 [environment reference](cli.md#environment).
 

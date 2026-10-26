@@ -3,9 +3,10 @@
 [Project overview](README.md) · [Documentation](docs/README.md)
 
 This document describes the current implementation and its operating boundaries.
-GoMeter is a local single-user tool with optional authenticated workers. It has
-not been independently security-audited and does not provide a multi-tenant
-service security model or a security certification.
+The personal dashboard and CLI run HTTP workloads, with optional authenticated
+workers. The separate PostgreSQL/OIDC team service provides shared authoring and
+private drafts; team execution is pending. GoMeter has not been independently
+security-audited and makes no multi-tenant security certification claim.
 
 ## Trust boundaries
 
@@ -16,6 +17,7 @@ service security model or a security certification.
 | Insecure workload HTTPS | Explicit opt-in, saved and labeled in results | Use only where skipping target identity checks is appropriate; it applies to all workload requests in that run |
 | Worker control | Shared token; verified HTTPS by default; remote HTTP requires independent worker/coordinator startup opt-ins; control redirects rejected | Restrict worker network access, distribute credentials securely, and operate only trusted workers |
 | Target-server telemetry | Separate client, verified HTTPS, optional environment bearer token, bounded parsing | Scope exporter access and select the intended endpoint and metrics |
+| Team authoring | Verified OIDC identity, current membership/roles, durable sessions, CSRF checks and metadata-only audit; private drafts scoped to their author | Operate trusted Keycloak and PostgreSQL, protect HTTPS ingress and backups, classify public fields, and verify company SSO/LDAP integration |
 | Local workspace and reports | Atomic writes; new workspace directories 0700 and files 0600 on permission-based filesystems | Protect the account, existing directories, downloaded files, backups, and CI artifact access |
 
 Local API tokens prevent cross-site request use; they do not isolate the dashboard
@@ -47,11 +49,11 @@ configuration. Workload `insecure` does not disable worker or telemetry verifica
 Workload custom CA, client-certificate, and selectable TLS-version options remain
 planned; do not infer support from the control-plane CA flags.
 
-## Team backend implementation boundary
+## Team authoring boundary
 
-The optional PostgreSQL repository and Keycloak-compatible OIDC verifier are
-backend foundations. The separate `workspace serve` service implements browser
-sign-in, durable hashed sessions and CSRF-protected local logout. It does not
+The separate `workspace serve` service implements Keycloak-compatible browser
+sign-in, durable hashed sessions, shared Tests editing, author-private drafts
+and CSRF-protected mutations and local logout. It does not
 serve personal dashboard routes or turn that dashboard into a team service.
 Do not expose existing raw-configuration or download endpoints to teammates on
 the assumption that repository role checks protect those endpoints.
@@ -74,7 +76,7 @@ and roles come from current membership. Disabling a member deletes their
 sessions. Keycloak/LDAP global logout and disable-event propagation are not
 implemented; local sessions expire no later than the ID token or eight hours.
 LDAP federation stays in Keycloak. See
-[team backend foundations](docs/team-workspace.md) and
+[team workspace setup](docs/team-workspace.md) and
 [managed secret boundaries](docs/managed-secrets.md) for setup and verification limits.
 
 ## Credentials and exported data

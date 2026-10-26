@@ -45,13 +45,25 @@ between sessions; update it when functionality or priorities change.
 - [ ] Independently verify request counts and latency against reference targets.
 - [ ] Publish measured resource efficiency, pacing accuracy, and limitations.
 
+## v0.9.0 release status
+
+[v0.9.0](docs/releases/v0.9.0.md) was published on 25 October 2026 with executable
+archives and checksums. The separate team service includes PostgreSQL Tests,
+Keycloak sign-in, managed-reference authoring and private drafts. Durable team
+submissions, the executor and execution-time secret resolution remain pending;
+see the [team delivery plan](docs/plans/team-workspace.md).
+
+The container upload failed on registry permissions and is deferred. This release
+does not establish company Keycloak/LDAP or Kubernetes acceptance.
+
 ## Current scope
 
 Milestones 1, 2, and 3 are complete. The current implementation includes opt-in
 target-server telemetry, distributed rate-mode workers, generator diagnostics,
 and HTTP timing in milestone 4. JSON scenarios
-and Go's standard library keep this version reproducible without third-party
-runtime dependencies.
+and embedded frontend assets keep the execution path independent of Java or
+Node.js. Source builds use the dependencies declared in `go.mod`; the separate
+team service additionally requires PostgreSQL and a configured OIDC provider.
 Tests support single requests and weighted journeys with nested if/else, bounded
 fixed-count/while loops, sequential HTTP requests,
 isolated sessions, variables, data rows, extraction, and assertions. No claim

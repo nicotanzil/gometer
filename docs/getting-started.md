@@ -8,6 +8,12 @@ does not start the demo or send test traffic.
 
 ## 1. Build from source
 
+For an executable without a Go installation, use the [release download guide](installation.md).
+Release archives contain `gometer` only. This walkthrough also needs the
+`gometer-demo` target and example files, so the steps below build both from source.
+If you use a release binary against your own test target, create a test in the
+dashboard instead of following the bundled-demo steps.
+
 Prerequisites: a source checkout and Go 1.27.3 or newer. Go modules download the
 PostgreSQL and OIDC dependencies. Make is optional; there is no frontend installation
 or asset build step. A compiled GoMeter binary needs neither Go nor Node.js.

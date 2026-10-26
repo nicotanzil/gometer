@@ -2,7 +2,7 @@
 
 [Documentation](README.md) · [Project overview](../README.md)
 
-The CLI and embedded dashboard use the same configuration, execution,
+The CLI and personal embedded dashboard use the same configuration, execution,
 measurement, and reporting packages. The dashboard listens on loopback by
 default; its optional remote mode is intended for a trusted private ingress.
 Remote workers run the same engine against a coordinated rate schedule. The
@@ -29,6 +29,30 @@ This is a logical flow. Worker engines and their measurements run in separate
 processes; final histogram states are validated and merged by the coordinator.
 The diagram does not imply shared memory or a durable job queue.
 
+## Shared authoring flow
+
+The separate `gometer workspace serve` service reuses configuration validation
+and selected canvas assets, but has its own HTTP routes and PostgreSQL store.
+It does not expose the personal dashboard's raw configuration or run routes.
+
+```mermaid
+flowchart LR
+  Browser[Team browser] --> Team[Team authoring service]
+  Browser --> Keycloak[Keycloak sign-in]
+  Keycloak --> LDAP[LDAP User Federation]
+  Team --> Identity[OIDC verification]
+  Team --> Store[(PostgreSQL)]
+  Team --> Document[Public document and reference validation]
+  Document --> Store
+```
+
+PostgreSQL holds memberships, sessions, audit events, shared definitions, reference
+metadata and author-private drafts. Shared documents bind empty fields to managed
+reference IDs and revisions. The authoring service never resolves secret values.
+The mounted-file reader is a separate building block for a future executor;
+there is no team-to-engine execution path or durable queue yet. See
+[shared documents](shared-tests.md) and [team setup](team-workspace.md).
+
 ## Package responsibilities
 
 | Area | Responsibility |
@@ -44,6 +68,11 @@ The diagram does not imply shared memory or a durable job queue.
 | `internal/telemetry/` | Bounded exporter parsing, selected scalar series, coverage, and counter/gauge observations |
 | `internal/report/` | Portable result JSON and self-contained HTML |
 | `internal/dashboard/` | Embedded app, local HTTP API, saved scenarios, runs, imports, and comparisons |
+| `internal/team/` | OIDC browser session flow, authenticated team HTTP API and shared Tests editor |
+| `internal/identity/` | OIDC provider discovery, token verification and claim boundaries |
+| `internal/workspace/` | PostgreSQL migrations, membership/role checks, conditional revisions, drafts and audit |
+| `internal/sharedtest/` | Public document schema and managed-reference binding validation |
+| `internal/secretfiles/` | Confined mounted-file reader; not wired into team execution |
 | `examples/` | Shared CLI examples and embedded dashboard starters |
 | `cmd/gometer-demo/` | Bounded-capacity HTTP target, journey endpoints, and telemetry exporter |
 
